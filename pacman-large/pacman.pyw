@@ -1063,6 +1063,17 @@ class level ():
 								ghosts[i].state = 2
 								
 								"""
+        # camera variables
+        # self.screenPixelPos = (1280 - (1280 / 2), 768 - (768 / 2))  # absolute x,y position of the screen from the upper-left corner of the level
+        self.screenPixelPos = (-(768 - (768 / 2)), -60)  # absolute x,y position of the screen from the upper-left corner of the level
+        self.screenNearestTilePos = (0, 0)  # nearest-tile position of the screen from the UL corner
+        self.screenPixelOffset = (-(768 - (768 / 2)), -60)  # offset in pixels of the screen from its nearest-tile position
+
+        # self.screenTileSize = (30, 28)
+        self.screenTileSize = (60, 60)
+        self.screenSize = (self.screenTileSize[1] * TILE_WIDTH, self.screenTileSize[0] * TILE_HEIGHT)
+
+        self.screenSize = (1280, 768)
 								# Must line up with grid before invoking a new path (for now)
 								ghosts[i].x = ghosts[i].nearestCol * TILE_HEIGHT
 								ghosts[i].y = ghosts[i].nearestRow * TILE_WIDTH								
