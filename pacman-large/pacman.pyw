@@ -295,9 +295,9 @@ class game():
         self.SetMode(4)
         thisLevel.LoadLevel(thisGame.GetLevelNum())
 
-        player.velX = 0
-        player.velY = 0
-        player.anim_pacmanCurrent = player.anim_pacmanS
+        player.vel_x = 0
+        player.vel_y = 0
+        player.anim_current = player.anim_stopped
 
 
     def SetMode(self, newMode):
@@ -655,7 +655,7 @@ class ghost():
                 self.y = self.nearestRow * TILE_HEIGHT
 
                 # chase pac-man
-                self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (player1.nearestRow, player1.nearestCol))
+                self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (player1.nearest_row, player1.nearest_col))
                 self.FollowNextPathWay()
 
     def FollowNextPathWay(self):
@@ -680,7 +680,7 @@ class ghost():
 
                 if not self.state == 3:
                     # chase pac-man
-                    self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (player.nearestRow, player.nearestCol))
+                    self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (player.nearest_row, player.nearest_col))
                     self.FollowNextPathWay()
 
                 else:
@@ -810,67 +810,55 @@ class fruit():
                     (self.velX, self.velY) = (0, self.speed)
 
 
-class pacman():
+class PacMan():
     def __init__(self):
         self.x = 0
         self.y = 0
-        self.velX = 0
-        self.velY = 0
+        self.vel_x = 0
+        self.vel_y = 0
         self.speed = 3
 
-        self.nearestRow = 0
-        self.nearestCol = 0
+        self.nearest_row = 0
+        self.nearest_col = 0
 
-        self.homeX = 0
-        self.homeY = 0
+        self.home_x = 0
+        self.home_y = 0
 
-        self.anim_pacmanL = {}
-        self.anim_pacmanR = {}
-        self.anim_pacmanU = {}
-        self.anim_pacmanD = {}
-        self.anim_pacmanS = {}
-        self.anim_pacmanCurrent = {}
+        self.anim_left = {}
+        self.anim_right = {}
+        self.anim_up = {}
+        self.anim_down = {}
+        self.anim_stopped = {}
+        self.anim_current = {}
 
         for i in range(1, 9, 1):
-            self.anim_pacmanL[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert()
-            self.anim_pacmanR[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-r " + str(i) + ".gif")).convert()
-            self.anim_pacmanU[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-u " + str(i) + ".gif")).convert()
-            self.anim_pacmanD[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-d " + str(i) + ".gif")).convert()
-            self.anim_pacmanS[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman.gif")).convert()
+            self.anim_left[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert()
+            self.anim_right[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-r " + str(i) + ".gif")).convert()
+            self.anim_up[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-u " + str(i) + ".gif")).convert()
+            self.anim_down[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-d " + str(i) + ".gif")).convert()
+            self.anim_stopped[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman.gif")).convert()
 
-        self.pelletSndNum = 0
+        self.pellet_snd_num = 0  # ?
 
-    def Move(self):
-
-        self.nearestRow = int(((self.y + (TILE_WIDTH / 2)) / TILE_WIDTH))
-        self.nearestCol = int(((self.x + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
-
+    def move(self):
+        self.nearest_row = int(((self.y + (TILE_WIDTH / 2)) / TILE_WIDTH))
+        self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
         # make sure the current velocity will not cause a collision before moving
-        if not thisLevel.CheckIfHitWall((self.x + self.velX, self.y + self.velY), (self.nearestRow, self.nearestCol)):
-            # it's ok to Move
-            self.x += self.velX
-            self.y += self.velY
-
+        if not thisLevel.CheckIfHitWall((self.x + self.vel_x, self.y + self.vel_y), (self.nearest_row, self.nearest_col)):
+            self.x += self.vel_x
+            self.y += self.vel_y
             # check for collisions with other tiles (pellets, etc)
-            thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearestRow, self.nearestCol))
-
+            thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
             # check for collisions with the ghosts
-            for i in range(0, 4, 1):
+            for i in range(0, len(ghosts)):
                 if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
-                    # hit a ghost
-
                     if ghosts[i].state == 1:
-                        # ghost is normal
+                        # ghost is normal, pacman dies
                         thisGame.SetMode(2)
-
                     elif ghosts[i].state == 2:
-                        # ghost is vulnerable
-                        # give them glasses
-                        # make them run
+                        # ghost is vulnerable, ghost dies
                         thisGame.AddToScore(thisGame.ghostValue)
                         thisGame.ghostValue = thisGame.ghostValue * 2
-                        # snd_eatgh.play()
-
                         ghosts[i].state = 3
                         ghosts[i].speed = ghosts[i].speed * 4
                         # and send them to the ghost box
@@ -878,82 +866,62 @@ class pacman():
                         ghosts[i].y = ghosts[i].nearestRow * TILE_HEIGHT
                         ghosts[i].currentPath = path.FindPath((ghosts[i].nearestRow, ghosts[i].nearestCol), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
                         ghosts[i].FollowNextPathWay()
-
                         # set game mode to brief pause after eating
                         thisGame.SetMode(5)
-
             # check for collisions with the fruit
-            if thisFruit.active == True:
+            if thisFruit.active:
                 if thisLevel.CheckIfHit((self.x, self.y), (thisFruit.x, thisFruit.y), TILE_WIDTH / 2):
                     thisGame.AddToScore(2500)
                     thisFruit.active = False
                     thisGame.fruitTimer = 0
                     thisGame.fruitScoreTimer = 120
-                    # snd_eatfruit.play()
-
+        # we're going to hit a wall -> stop moving
         else:
-            # we're going to hit a wall -- stop moving
-            self.velX = 0
-            self.velY = 0
-
+            self.vel_x = 0
+            self.vel_y = 0
         # deal with power-pellet ghost timer
         if thisGame.ghostTimer > 0:
             thisGame.ghostTimer -= 1
-
             if thisGame.ghostTimer == 0:
                 for i in range(0, 4, 1):
                     if ghosts[i].state == 2:
                         ghosts[i].state = 1
                 self.ghostValue = 0
-
         # deal with fruit timer
         thisGame.fruitTimer += 1
         if thisGame.fruitTimer == 500:
-            pathwayPair = thisLevel.GetPathwayPairPos()
-
-            if not pathwayPair == False:
-                pathwayEntrance = pathwayPair[0]
-                pathwayExit = pathwayPair[1]
-
+            pathway_pair = thisLevel.GetPathwayPairPos()
+            if not pathway_pair == False:
+                pathway_entrance = pathway_pair[0]
+                pathway_exit = pathway_pair[1]
                 thisFruit.active = True
-
-                thisFruit.nearestRow = pathwayEntrance[0]
-                thisFruit.nearestCol = pathwayEntrance[1]
-
+                thisFruit.nearestRow = pathway_entrance[0]
+                thisFruit.nearestCol = pathway_entrance[1]
                 thisFruit.x = thisFruit.nearestCol * TILE_WIDTH
                 thisFruit.y = thisFruit.nearestRow * TILE_HEIGHT
-
-                thisFruit.currentPath = path.FindPath((thisFruit.nearestRow, thisFruit.nearestCol), pathwayExit)
+                thisFruit.currentPath = path.FindPath((thisFruit.nearestRow, thisFruit.nearestCol), pathway_exit)
                 thisFruit.FollowNextPathWay()
-
         if thisGame.fruitScoreTimer > 0:
             thisGame.fruitScoreTimer -= 1
 
-
-    def Draw(self):
-
+    def draw(self):
         if thisGame.mode == 3:
             return False
-
         # set the current frame array to match the direction pacman is facing
-        if self.velX > 0:
-            self.anim_pacmanCurrent = self.anim_pacmanR
-        elif self.velX < 0:
-            self.anim_pacmanCurrent = self.anim_pacmanL
-        elif self.velY > 0:
-            self.anim_pacmanCurrent = self.anim_pacmanD
-        elif self.velY < 0:
-            self.anim_pacmanCurrent = self.anim_pacmanU
-
-        screen.blit(self.anim_pacmanCurrent[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-
+        if self.vel_x > 0:
+            self.anim_current = self.anim_right
+        elif self.vel_x < 0:
+            self.anim_current = self.anim_left
+        elif self.vel_y > 0:
+            self.anim_current = self.anim_down
+        elif self.vel_y < 0:
+            self.anim_current = self.anim_up
+        screen.blit(self.anim_current[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+        # Animate mouth movement
         if thisGame.mode == 1:
-            if not self.velX == 0 or not self.velY == 0:
-                # only Move mouth when pacman is moving
+            if not self.vel_x == 0 or not self.vel_y == 0:  # Only animate when Pac-Man moves
                 self.animFrame += 1
-
-            if self.animFrame == 9:
-                # wrap to beginning
+            if self.animFrame == 9:  # Reset
                 self.animFrame = 1
 
 
@@ -1037,8 +1005,8 @@ class level():
                     if result == tileID['pellet']:
                         # got a pellet
                         thisLevel.SetMapTile((iRow, iCol), 0)
-                        # snd_pellet[player.pelletSndNum].play()
-                        player.pelletSndNum = 1 - player.pelletSndNum
+                        # snd_pellet[player.pellet_snd_num].play()
+                        player.pellet_snd_num = 1 - player.pellet_snd_num
 
                         thisLevel.pellets -= 1
 
@@ -1087,7 +1055,7 @@ class level():
                                 if thisLevel.GetMapTile((iRow, i)) == tileID['door-h']:
                                     player.x = i * TILE_WIDTH
 
-                                    if player.velX > 0:
+                                    if player.vel_x > 0:
                                         player.x += TILE_WIDTH
                                     else:
                                         player.x -= TILE_WIDTH
@@ -1099,7 +1067,7 @@ class level():
                                 if thisLevel.GetMapTile((i, iCol)) == tileID['door-v']:
                                     player.y = i * TILE_HEIGHT
 
-                                    if player.velY > 0:
+                                    if player.vel_y > 0:
                                         player.y += TILE_HEIGHT
                                     else:
                                         player.y -= TILE_HEIGHT
@@ -1292,10 +1260,10 @@ class level():
                         if thisID == 4:
                             # starting position for pac-man
 
-                            player1.homeX = k * TILE_WIDTH
-                            player1.homeY = rowNum * TILE_HEIGHT
-                            player2.homeX = k * TILE_WIDTH
-                            player2.homeY = rowNum * TILE_HEIGHT
+                            player1.home_x = k * TILE_WIDTH
+                            player1.home_y = rowNum * TILE_HEIGHT
+                            player2.home_x = k * TILE_WIDTH
+                            player2.home_y = rowNum * TILE_HEIGHT
                             self.SetMapTile((rowNum, k), 0)
 
                         elif thisID >= 10 and thisID <= 13:
@@ -1358,12 +1326,12 @@ class level():
         thisGame.fruitTimer = 0
 
         for player in players:
-            player.x = player.homeX
-            player.y = player.homeY
-            player.velX = 0
-            player.velY = 0
+            player.x = player.home_x
+            player.y = player.home_y
+            player.vel_x = 0
+            player.vel_y = 0
 
-            player.anim_pacmanCurrent = player.anim_pacmanS
+            player.anim_current = player.anim_stopped
             player.animFrame = 3
 
 
@@ -1376,23 +1344,23 @@ def CheckIfCloseButton(events):
 def CheckInputs1():
     if thisGame.mode == 1:
         if pygame.key.get_pressed()[pygame.K_d] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
-            if not (player1.velX == player1.speed and player1.velY == 0) and not thisLevel.CheckIfHitWall((player1.x + player1.speed, player1.y), (player1.nearestRow, player1.nearestCol)):
-                player1.velX = player1.speed
-                player1.velY = 0
+            if not (player1.vel_x == player1.speed and player1.vel_y == 0) and not thisLevel.CheckIfHitWall((player1.x + player1.speed, player1.y), (player1.nearest_row, player1.nearest_col)):
+                player1.vel_x = player1.speed
+                player1.vel_y = 0
         elif pygame.key.get_pressed()[pygame.K_a] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
-            if not (player1.velX == -player1.speed and player1.velY == 0) and not thisLevel.CheckIfHitWall((player1.x - player1.speed, player1.y), (player1.nearestRow, player1.nearestCol)):
-                player1.velX = -player1.speed
-                player1.velY = 0
+            if not (player1.vel_x == -player1.speed and player1.vel_y == 0) and not thisLevel.CheckIfHitWall((player1.x - player1.speed, player1.y), (player1.nearest_row, player1.nearest_col)):
+                player1.vel_x = -player1.speed
+                player1.vel_y = 0
 
         elif pygame.key.get_pressed()[pygame.K_s] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
-            if not (player1.velX == 0 and player1.velY == player1.speed) and not thisLevel.CheckIfHitWall((player1.x, player1.y + player1.speed), (player1.nearestRow, player1.nearestCol)):
-                player1.velX = 0
-                player1.velY = player1.speed
+            if not (player1.vel_x == 0 and player1.vel_y == player1.speed) and not thisLevel.CheckIfHitWall((player1.x, player1.y + player1.speed), (player1.nearest_row, player1.nearest_col)):
+                player1.vel_x = 0
+                player1.vel_y = player1.speed
 
         elif pygame.key.get_pressed()[pygame.K_w] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-            if not (player1.velX == 0 and player1.velY == -player1.speed) and not thisLevel.CheckIfHitWall((player1.x, player1.y - player1.speed), (player1.nearestRow, player1.nearestCol)):
-                player1.velX = 0
-                player1.velY = -player1.speed
+            if not (player1.vel_x == 0 and player1.vel_y == -player1.speed) and not thisLevel.CheckIfHitWall((player1.x, player1.y - player1.speed), (player1.nearest_row, player1.nearest_col)):
+                player1.vel_x = 0
+                player1.vel_y = -player1.speed
 
         elif pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
             sys.exit(0)
@@ -1405,24 +1373,24 @@ def CheckInputs1():
 def CheckInputs2():
     if thisGame.mode == 1:
         if pygame.key.get_pressed()[pygame.K_RIGHT] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
-            if not (player2.velX == player2.speed and player2.velY == 0) and not thisLevel.CheckIfHitWall((player2.x + player2.speed, player2.y), (player2.nearestRow, player2.nearestCol)):
-                player2.velX = player2.speed
-                player2.velY = 0
+            if not (player2.vel_x == player2.speed and player2.vel_y == 0) and not thisLevel.CheckIfHitWall((player2.x + player2.speed, player2.y), (player2.nearest_row, player2.nearest_col)):
+                player2.vel_x = player2.speed
+                player2.vel_y = 0
 
         elif pygame.key.get_pressed()[pygame.K_LEFT] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
-            if not (player2.velX == -player2.speed and player2.velY == 0) and not thisLevel.CheckIfHitWall((player2.x - player2.speed, player2.y), (player2.nearestRow, player2.nearestCol)):
-                player2.velX = -player2.speed
-                player2.velY = 0
+            if not (player2.vel_x == -player2.speed and player2.vel_y == 0) and not thisLevel.CheckIfHitWall((player2.x - player2.speed, player2.y), (player2.nearest_row, player2.nearest_col)):
+                player2.vel_x = -player2.speed
+                player2.vel_y = 0
 
         elif pygame.key.get_pressed()[pygame.K_DOWN] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
-            if not (player2.velX == 0 and player2.velY == player2.speed) and not thisLevel.CheckIfHitWall((player2.x, player2.y + player2.speed), (player2.nearestRow, player2.nearestCol)):
-                player2.velX = 0
-                player2.velY = player2.speed
+            if not (player2.vel_x == 0 and player2.vel_y == player2.speed) and not thisLevel.CheckIfHitWall((player2.x, player2.y + player2.speed), (player2.nearest_row, player2.nearest_col)):
+                player2.vel_x = 0
+                player2.vel_y = player2.speed
 
         elif pygame.key.get_pressed()[pygame.K_UP] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-            if not (player2.velX == 0 and player2.velY == -player2.speed) and not thisLevel.CheckIfHitWall((player2.x, player2.y - player2.speed), (player2.nearestRow, player2.nearestCol)):
-                player2.velX = 0
-                player2.velY = -player2.speed
+            if not (player2.vel_x == 0 and player2.vel_y == -player2.speed) and not thisLevel.CheckIfHitWall((player2.x, player2.y - player2.speed), (player2.nearest_row, player2.nearest_col)):
+                player2.vel_x = 0
+                player2.vel_y = -player2.speed
 
 
     elif thisGame.mode == 3:
@@ -1494,8 +1462,8 @@ def GetCrossRef():
 # ___/  main code block  \_____________________________________________________
 
 # create the pacman
-player1 = pacman()
-player2 = pacman()
+player1 = PacMan()
+player2 = PacMan()
 players = [player1, player2]
 
 # create a path_finder object
@@ -1542,7 +1510,7 @@ while True:
 
         thisGame.modeTimer += 1
         for player in players:
-            player.Move()
+            player.move()
         for i in range(0, 4, 1):
             ghosts[i].Move()
         thisFruit.Move()
@@ -1574,7 +1542,7 @@ while True:
         if thisGame.modeTimer == 90:
             thisGame.SetMode(1)
             for player in players:
-                player.velX = player.speed
+                player.vel_x = player.speed
 
     elif thisGame.mode == 5:
         # brief pause after munching a vulnerable ghost
@@ -1636,7 +1604,7 @@ while True:
             ghosts[i].Draw()
         thisFruit.Draw()
         for player in players:
-            player.Draw()
+            player.draw()
 
         if thisGame.mode == 3:
             pass
