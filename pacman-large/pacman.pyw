@@ -318,211 +318,180 @@ class node():
         self.type = -1
 
 
-class path_finder():
+class PathFinder:
     def __init__(self):
         # map is a 1-DIMENSIONAL array.
-        # use the Unfold( (row, col) ) function to convert a 2D coordinate pair
-        # into a 1D index to use with this array.
+        # use the Unfold( (row, col) ) function to convert a 2D coordinate pair into a 1D index to use with this array.
         self.map = {}
         self.size = (-1, -1)  # rows by columns
-
-        self.pathChainRev = ""
-        self.pathChain = ""
-
+        self.path_chain_rev = ""
+        self.path_chain = ""
         # starting and ending nodes
         self.start = (-1, -1)
         self.end = (-1, -1)
-
         # current node (used by algorithm)
         self.current = (-1, -1)
-
         # open and closed lists of nodes to consider (used by algorithm)
-        self.openList = []
-        self.closedList = []
-
+        self.open_list = []
+        self.closed_list = []
         # used in algorithm (adjacent neighbors path finder is allowed to consider)
-        self.neighborSet = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+        self.neighbor_set = [(0, -1), (0, 1), (-1, 0), (1, 0)]
 
-    def ResizeMap(self, (numRows, numCols)):
+    def resize_map(self, (num_rows, num_cols)):
         self.map = {}
-        self.size = (numRows, numCols)
-
+        self.size = (num_rows, num_cols)
         # initialize path_finder map to a 2D array of empty nodes
-        for row in range(0, self.size[0], 1):
-            for col in range(0, self.size[1], 1):
-                self.Set((row, col), node())
-                self.SetType((row, col), 0)
+        for row in range(0, self.size[0]):
+            for col in range(0, self.size[1]):
+                self.set((row, col), node())
+                self.set_type((row, col), 0)
 
-    def CleanUpTemp(self):
-
+    def clean_up_temp(self):
         # this resets variables needed for a search (but preserves the same map / maze)
-
-        self.pathChainRev = ""
-        self.pathChain = ""
+        self.path_chain_rev = ""
+        self.path_chain = ""
         self.current = (-1, -1)
-        self.openList = []
-        self.closedList = []
+        self.open_list = []
+        self.closed_list = []
 
-    def FindPath(self, startPos, endPos):
-
-        self.CleanUpTemp()
-
-        # (row, col) tuples
-        self.start = startPos
-        self.end = endPos
-
+    def find_path(self, start_pos, end_pos):
+        self.clean_up_temp()
+        self.start = start_pos
+        self.end = end_pos
         # add start node to open list
-        self.AddToOpenList(self.start)
-        self.SetG(self.start, 0)
-        self.SetH(self.start, 0)
-        self.SetF(self.start, 0)
+        self.add_to_open_list(self.start)
+        self.set_g(self.start, 0)
+        self.set_h(self.start, 0)
+        self.set_f(self.start, 0)
 
-        doContinue = True
-
-        while (doContinue == True):
-
-            thisLowestFNode = self.GetLowestFNode()
-
-            if not thisLowestFNode == self.end and not thisLowestFNode == False:
-                self.current = thisLowestFNode
-                self.RemoveFromOpenList(self.current)
-                self.AddToClosedList(self.current)
-
-                for offset in self.neighborSet:
-                    thisNeighbor = (self.current[0] + offset[0], self.current[1] + offset[1])
-
-                    if not thisNeighbor[0] < 0 and not thisNeighbor[1] < 0 and not thisNeighbor[0] > self.size[0] - 1 and not thisNeighbor[1] > self.size[1] - 1 and not self.GetType(thisNeighbor) == 1:
-                        cost = self.GetG(self.current) + 10
-
-                        if self.IsInOpenList(thisNeighbor) and cost < self.GetG(thisNeighbor):
-                            self.RemoveFromOpenList(thisNeighbor)
-
-                        # if self.IsInClosedList( thisNeighbor ) and cost < self.GetG( thisNeighbor ):
-                        #	self.RemoveFromClosedList( thisNeighbor )
-
-                        if not self.IsInOpenList(thisNeighbor) and not self.IsInClosedList(thisNeighbor):
-                            self.AddToOpenList(thisNeighbor)
-                            self.SetG(thisNeighbor, cost)
-                            self.CalcH(thisNeighbor)
-                            self.CalcF(thisNeighbor)
-                            self.SetParent(thisNeighbor, self.current)
+        do_continue = True
+        while do_continue:
+            this_lowest_f_node = self.get_lowest_f_node()
+            if not this_lowest_f_node == self.end and this_lowest_f_node:
+                self.current = this_lowest_f_node
+                self.remove_from_open_list(self.current)
+                self.add_to_closed_list(self.current)
+                for offset in self.neighbor_set:
+                    this_neighbor = (self.current[0] + offset[0], self.current[1] + offset[1])
+                    if not this_neighbor[0] < 0 and not this_neighbor[1] < 0 and not this_neighbor[0] > self.size[0] - 1 and not this_neighbor[1] > self.size[1] - 1 and not self.get_type(this_neighbor) == 1:
+                        cost = self.get_g(self.current) + 10
+                        if self.is_in_open_list(this_neighbor) and cost < self.get_g(this_neighbor):
+                            self.remove_from_open_list(this_neighbor)
+                        if not self.is_in_open_list(this_neighbor) and not self.is_in_closed_list(this_neighbor):
+                            self.add_to_open_list(this_neighbor)
+                            self.set_g(this_neighbor, cost)
+                            self.calc_h(this_neighbor)
+                            self.calc_f(this_neighbor)
+                            self.set_parent(this_neighbor, self.current)
             else:
-                doContinue = False
+                do_continue = False
 
-        if thisLowestFNode == False:
+        if this_lowest_f_node == False:
             return False
 
         # reconstruct path
         self.current = self.end
         while not self.current == self.start:
             # build a string representation of the path using R, L, D, U
-            if self.current[1] > self.GetParent(self.current)[1]:
-                self.pathChainRev += 'R'
-            elif self.current[1] < self.GetParent(self.current)[1]:
-                self.pathChainRev += 'L'
-            elif self.current[0] > self.GetParent(self.current)[0]:
-                self.pathChainRev += 'D'
-            elif self.current[0] < self.GetParent(self.current)[0]:
-                self.pathChainRev += 'U'
-            self.current = self.GetParent(self.current)
-            self.SetType(self.current, 4)
+            if self.current[1] > self.get_parent(self.current)[1]:
+                self.path_chain_rev += 'R'
+            elif self.current[1] < self.get_parent(self.current)[1]:
+                self.path_chain_rev += 'L'
+            elif self.current[0] > self.get_parent(self.current)[0]:
+                self.path_chain_rev += 'D'
+            elif self.current[0] < self.get_parent(self.current)[0]:
+                self.path_chain_rev += 'U'
+            self.current = self.get_parent(self.current)
+            self.set_type(self.current, 4)
 
-        # because pathChainRev was constructed in reverse order, it needs to be reversed!
-        for i in range(len(self.pathChainRev) - 1, -1, -1):
-            self.pathChain += self.pathChainRev[i]
+        # because path_chain_rev was constructed in reverse order, it needs to be reversed!
+        for i in range(len(self.path_chain_rev) - 1, -1, -1):
+            self.path_chain += self.path_chain_rev[i]
 
         # set start and ending positions for future reference
-        self.SetType(self.start, 2)
-        self.SetType(self.end, 3)
+        self.set_type(self.start, 2)
+        self.set_type(self.end, 3)
 
-        return self.pathChain
+        return self.path_chain
 
-    def Unfold(self, (row, col)):
-        # this function converts a 2D array coordinate pair (row, col)
-        # to a 1D-array index, for the object's 1D map array.
+    def unfold(self, (row, col)):
+        # this function converts a 2D array coordinate pair (row, col) to a 1D-array index, for the object's 1D map array.
         return (row * self.size[1]) + col
 
-    def Set(self, (row, col), newNode):
+    def set(self, (row, col), new_node):
         # sets the value of a particular map cell (usually refers to a node object)
-        self.map[self.Unfold((row, col))] = newNode
+        self.map[self.unfold((row, col))] = new_node
 
-    def GetType(self, (row, col)):
-        return self.map[self.Unfold((row, col))].type
+    def get_type(self, (row, col)):
+        return self.map[self.unfold((row, col))].type
 
-    def SetType(self, (row, col), newValue):
-        self.map[self.Unfold((row, col))].type = newValue
+    def set_type(self, (row, col), new_value):
+        self.map[self.unfold((row, col))].type = new_value
 
-    def GetF(self, (row, col)):
-        return self.map[self.Unfold((row, col))].f
+    def get_f(self, (row, col)):
+        return self.map[self.unfold((row, col))].f
 
-    def GetG(self, (row, col)):
-        return self.map[self.Unfold((row, col))].g
+    def get_g(self, (row, col)):
+        return self.map[self.unfold((row, col))].g
 
-    def GetH(self, (row, col)):
-        return self.map[self.Unfold((row, col))].h
+    def get_h(self, (row, col)):
+        return self.map[self.unfold((row, col))].h
 
-    def SetG(self, (row, col), newValue):
-        self.map[self.Unfold((row, col))].g = newValue
+    def set_g(self, (row, col), new_value):
+        self.map[self.unfold((row, col))].g = new_value
 
-    def SetH(self, (row, col), newValue):
-        self.map[self.Unfold((row, col))].h = newValue
+    def set_h(self, (row, col), new_value):
+        self.map[self.unfold((row, col))].h = new_value
 
-    def SetF(self, (row, col), newValue):
-        self.map[self.Unfold((row, col))].f = newValue
+    def set_f(self, (row, col), new_value):
+        self.map[self.unfold((row, col))].f = new_value
 
-    def CalcH(self, (row, col)):
-        self.map[self.Unfold((row, col))].h = abs(row - self.end[0]) + abs(col - self.end[0])
+    def calc_h(self, (row, col)):
+        self.map[self.unfold((row, col))].h = abs(row - self.end[0]) + abs(col - self.end[0])
 
-    def CalcF(self, (row, col)):
-        unfoldIndex = self.Unfold((row, col))
-        self.map[unfoldIndex].f = self.map[unfoldIndex].g + self.map[unfoldIndex].h
+    def calc_f(self, (row, col)):
+        unfold_index = self.unfold((row, col))
+        self.map[unfold_index].f = self.map[unfold_index].g + self.map[unfold_index].h
 
-    def AddToOpenList(self, (row, col)):
-        self.openList.append((row, col))
+    def add_to_open_list(self, (row, col)):
+        self.open_list.append((row, col))
 
-    def RemoveFromOpenList(self, (row, col)):
-        self.openList.remove((row, col))
+    def remove_from_open_list(self, (row, col)):
+        self.open_list.remove((row, col))
 
-    def IsInOpenList(self, (row, col)):
-        if self.openList.count((row, col)) > 0:
-            return True
+    def is_in_open_list(self, (row, col)):
+        return self.open_list.count((row, col))
+
+    def get_lowest_f_node(self):
+        lowest_value = 1000  # start arbitrarily high
+        lowest_pair = (-1, -1)
+        for i_ordered_pair in self.open_list:
+            if self.get_f(i_ordered_pair) < lowest_value:
+                lowest_value = self.get_f(i_ordered_pair)
+                lowest_pair = i_ordered_pair
+
+        if not lowest_pair == (-1, -1):
+            return lowest_pair
         else:
             return False
 
-    def GetLowestFNode(self):
-        lowestValue = 1000  # start arbitrarily high
-        lowestPair = (-1, -1)
+    def add_to_closed_list(self, (row, col)):
+        self.closed_list.append((row, col))
 
-        for iOrderedPair in self.openList:
-            if self.GetF(iOrderedPair) < lowestValue:
-                lowestValue = self.GetF(iOrderedPair)
-                lowestPair = iOrderedPair
+    def is_in_closed_list(self, (row, col)):
+        return self.closed_list.count((row, col))
 
-        if not lowestPair == (-1, -1):
-            return lowestPair
-        else:
-            return False
+    def set_parent(self, (row, col), (parent_row, parent_col)):
+        self.map[self.unfold((row, col))].parent = (parent_row, parent_col)
 
-    def AddToClosedList(self, (row, col)):
-        self.closedList.append((row, col))
-
-    def IsInClosedList(self, (row, col)):
-        if self.closedList.count((row, col)) > 0:
-            return True
-        else:
-            return False
-
-    def SetParent(self, (row, col), (parentRow, parentCol)):
-        self.map[self.Unfold((row, col))].parent = (parentRow, parentCol)
-
-    def GetParent(self, (row, col)):
-        return self.map[self.Unfold((row, col))].parent
+    def get_parent(self, (row, col)):
+        return self.map[self.unfold((row, col))].parent
 
     def draw(self):
-        for row in range(0, self.size[0], 1):
-            for col in range(0, self.size[1], 1):
-                thisTile = self.GetType((row, col))
-                screen.blit(tileIDImage[thisTile], (col * (TILE_WIDTH * 2), row * (TILE_WIDTH * 2)))
+        for row in range(0, self.size[0]):
+            for col in range(0, self.size[1]):
+                this_tile = self.get_type((row, col))
+                screen.blit(tileIDImage[this_tile], (col * (TILE_WIDTH * 2), row * (TILE_WIDTH * 2)))
 
 
 class ghost():
@@ -655,7 +624,7 @@ class ghost():
                 self.y = self.nearestRow * TILE_HEIGHT
 
                 # chase pac-man
-                self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (player1.nearest_row, player1.nearest_col))
+                self.currentPath = path.find_path((self.nearestRow, self.nearestCol), (player1.nearest_row, player1.nearest_col))
                 self.FollowNextPathWay()
 
     def FollowNextPathWay(self):
@@ -680,7 +649,7 @@ class ghost():
 
                 if not self.state == 3:
                     # chase pac-man
-                    self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (player.nearest_row, player.nearest_col))
+                    self.currentPath = path.find_path((self.nearestRow, self.nearestCol), (player.nearest_row, player.nearest_col))
                     self.FollowNextPathWay()
 
                 else:
@@ -695,7 +664,7 @@ class ghost():
                         randRow = random.randint(1, thisLevel.lvlHeight - 2)
                         randCol = random.randint(1, thisLevel.lvlWidth - 2)
 
-                    self.currentPath = path.FindPath((self.nearestRow, self.nearestCol), (randRow, randCol))
+                    self.currentPath = path.find_path((self.nearestRow, self.nearestCol), (randRow, randCol))
                     self.FollowNextPathWay()
 
 
@@ -810,7 +779,7 @@ class fruit():
                     (self.velX, self.velY) = (0, self.speed)
 
 
-class PacMan():
+class PacMan:
     def __init__(self):
         self.x = 0
         self.y = 0
@@ -864,7 +833,7 @@ class PacMan():
                         # and send them to the ghost box
                         ghosts[i].x = ghosts[i].nearestCol * TILE_WIDTH
                         ghosts[i].y = ghosts[i].nearestRow * TILE_HEIGHT
-                        ghosts[i].currentPath = path.FindPath((ghosts[i].nearestRow, ghosts[i].nearestCol), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
+                        ghosts[i].currentPath = path.find_path((ghosts[i].nearestRow, ghosts[i].nearestCol), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
                         ghosts[i].FollowNextPathWay()
                         # set game mode to brief pause after eating
                         thisGame.SetMode(5)
@@ -899,7 +868,7 @@ class PacMan():
                 thisFruit.nearestCol = pathway_entrance[1]
                 thisFruit.x = thisFruit.nearestCol * TILE_WIDTH
                 thisFruit.y = thisFruit.nearestRow * TILE_HEIGHT
-                thisFruit.currentPath = path.FindPath((thisFruit.nearestRow, thisFruit.nearestCol), pathway_exit)
+                thisFruit.currentPath = path.find_path((thisFruit.nearestRow, thisFruit.nearestCol), pathway_exit)
                 thisFruit.FollowNextPathWay()
         if thisGame.fruitScoreTimer > 0:
             thisGame.fruitScoreTimer -= 1
@@ -1285,14 +1254,14 @@ class level():
         GetCrossRef()
 
         # load map into the pathfinder object
-        path.ResizeMap((self.lvlHeight, self.lvlWidth))
+        path.resize_map((self.lvlHeight, self.lvlWidth))
 
         for row in range(0, path.size[0], 1):
             for col in range(0, path.size[1], 1):
                 if self.IsWall((row, col)):
-                    path.SetType((row, col), 1)
+                    path.set_type((row, col), 1)
                 else:
-                    path.SetType((row, col), 0)
+                    path.set_type((row, col), 0)
 
         # do all the level-starting stuff
         self.Restart()
@@ -1318,7 +1287,7 @@ class level():
                 randCol = random.randint(1, self.lvlWidth - 2)
 
             # print "Ghost " + str(i) + " headed towards " + str((randRow, randCol))
-            ghosts[i].currentPath = path.FindPath((ghosts[i].nearestRow, ghosts[i].nearestCol), (randRow, randCol))
+            ghosts[i].currentPath = path.find_path((ghosts[i].nearestRow, ghosts[i].nearestCol), (randRow, randCol))
             ghosts[i].FollowNextPathWay()
 
         thisFruit.active = False
@@ -1467,7 +1436,7 @@ player2 = PacMan()
 players = [player1, player2]
 
 # create a path_finder object
-path = path_finder()
+path = PathFinder()
 
 # create ghost objects
 ghosts = {}
