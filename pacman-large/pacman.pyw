@@ -498,8 +498,8 @@ class ghost():
     def __init__(self, ghostID):
         self.x = 0
         self.y = 0
-        self.velX = 0
-        self.velY = 0
+        self.vel_x = 0
+        self.vel_y = 0
         self.speed = 1
 
         self.nearestRow = 0
@@ -571,7 +571,6 @@ class ghost():
             screen.blit(self.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 2:
             # draw vulnerable ghost
-
             if thisGame.ghostTimer > 100:
                 # blue
                 screen.blit(ghosts[4].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
@@ -582,7 +581,6 @@ class ghost():
                     screen.blit(ghosts[5].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
                     screen.blit(ghosts[4].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
@@ -603,29 +601,16 @@ class ghost():
             self.animDelay = 0
 
     def Move(self):
-
-
-        self.x += self.velX
-        self.y += self.velY
-
-        self.nearestRow = int(((self.y + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
-        self.nearestCol = int(((self.x + (TILE_HEIGHT / 2)) / TILE_WIDTH))
-
-        if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
-            # if the ghost is lined up with the grid again
-            # meaning, it's time to go to the next path item
-
-            if len(self.currentPath) > 0:
-                self.currentPath = self.currentPath[1:]
-                self.FollowNextPathWay()
-
-            else:
-                self.x = self.nearestCol * TILE_WIDTH
-                self.y = self.nearestRow * TILE_HEIGHT
-
-                # chase pac-man
-                self.currentPath = path.find_path((self.nearestRow, self.nearestCol), (player1.nearest_row, player1.nearest_col))
-                self.FollowNextPathWay()
+        self.nearest_row = int(((self.y + (TILE_WIDTH / 2)) / TILE_WIDTH))
+        self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
+        # make sure the current velocity will not cause a collision before moving
+        if not thisLevel.CheckIfHitWall((self.x + self.vel_x, self.y + self.vel_y), (self.nearest_row, self.nearest_col)):
+            self.x += self.vel_x
+            self.y += self.vel_y
+        # we're going to hit a wall -> stop moving
+        else:
+            self.vel_x = 0
+            self.vel_y = 0
 
     def FollowNextPathWay(self):
 
@@ -1231,8 +1216,6 @@ class level():
 
                             player1.home_x = k * TILE_WIDTH
                             player1.home_y = rowNum * TILE_HEIGHT
-                            player2.home_x = k * TILE_WIDTH
-                            player2.home_y = rowNum * TILE_HEIGHT
                             self.SetMapTile((rowNum, k), 0)
 
                         elif thisID >= 10 and thisID <= 13:
@@ -1312,56 +1295,28 @@ def CheckIfCloseButton(events):
 
 def CheckInputs1():
     if thisGame.mode == 1:
-        if pygame.key.get_pressed()[pygame.K_d] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
-            if not (player1.vel_x == player1.speed and player1.vel_y == 0) and not thisLevel.CheckIfHitWall((player1.x + player1.speed, player1.y), (player1.nearest_row, player1.nearest_col)):
-                player1.vel_x = player1.speed
-                player1.vel_y = 0
-        elif pygame.key.get_pressed()[pygame.K_a] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
-            if not (player1.vel_x == -player1.speed and player1.vel_y == 0) and not thisLevel.CheckIfHitWall((player1.x - player1.speed, player1.y), (player1.nearest_row, player1.nearest_col)):
-                player1.vel_x = -player1.speed
-                player1.vel_y = 0
+        for ghost, keys in ghosts_keys.items():
+            if pygame.key.get_pressed()[keys[0]] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
+                if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
+                    ghost.vel_x = ghost.speed
+                    ghost.vel_y = 0
 
-        elif pygame.key.get_pressed()[pygame.K_s] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
-            if not (player1.vel_x == 0 and player1.vel_y == player1.speed) and not thisLevel.CheckIfHitWall((player1.x, player1.y + player1.speed), (player1.nearest_row, player1.nearest_col)):
-                player1.vel_x = 0
-                player1.vel_y = player1.speed
+            elif pygame.key.get_pressed()[keys[1]] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
+                if not (ghost.vel_x == -ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x - ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
+                    ghost.vel_x = -ghost.speed
+                    ghost.vel_y = 0
 
-        elif pygame.key.get_pressed()[pygame.K_w] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-            if not (player1.vel_x == 0 and player1.vel_y == -player1.speed) and not thisLevel.CheckIfHitWall((player1.x, player1.y - player1.speed), (player1.nearest_row, player1.nearest_col)):
-                player1.vel_x = 0
-                player1.vel_y = -player1.speed
+            elif pygame.key.get_pressed()[keys[2]] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
+                if not (ghost.vel_x == 0 and ghost.vel_y == ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y + ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
+                    ghost.vel_x = 0
+                    ghost.vel_y = ghost.speed
 
-        elif pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-            sys.exit(0)
-
-    elif thisGame.mode == 3:
-        if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
-            thisGame.StartNewGame()
-
-
-def CheckInputs2():
-    if thisGame.mode == 1:
-        if pygame.key.get_pressed()[pygame.K_RIGHT] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
-            if not (player2.vel_x == player2.speed and player2.vel_y == 0) and not thisLevel.CheckIfHitWall((player2.x + player2.speed, player2.y), (player2.nearest_row, player2.nearest_col)):
-                player2.vel_x = player2.speed
-                player2.vel_y = 0
-
-        elif pygame.key.get_pressed()[pygame.K_LEFT] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
-            if not (player2.vel_x == -player2.speed and player2.vel_y == 0) and not thisLevel.CheckIfHitWall((player2.x - player2.speed, player2.y), (player2.nearest_row, player2.nearest_col)):
-                player2.vel_x = -player2.speed
-                player2.vel_y = 0
-
-        elif pygame.key.get_pressed()[pygame.K_DOWN] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
-            if not (player2.vel_x == 0 and player2.vel_y == player2.speed) and not thisLevel.CheckIfHitWall((player2.x, player2.y + player2.speed), (player2.nearest_row, player2.nearest_col)):
-                player2.vel_x = 0
-                player2.vel_y = player2.speed
-
-        elif pygame.key.get_pressed()[pygame.K_UP] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-            if not (player2.vel_x == 0 and player2.vel_y == -player2.speed) and not thisLevel.CheckIfHitWall((player2.x, player2.y - player2.speed), (player2.nearest_row, player2.nearest_col)):
-                player2.vel_x = 0
-                player2.vel_y = -player2.speed
-
-
+            elif pygame.key.get_pressed()[keys[3]] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
+                if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
+                    ghost.vel_x = 0
+                    ghost.vel_y = -ghost.speed
+            elif pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
+                sys.exit(0)
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
             thisGame.StartNewGame()
@@ -1432,17 +1387,23 @@ def GetCrossRef():
 
 # create the pacman
 player1 = PacMan()
-player2 = PacMan()
-players = [player1, player2]
+players = [player1]
 
 # create a path_finder object
 path = PathFinder()
 
 # create ghost objects
-ghosts = {}
-for i in range(0, 6, 1):
-    # remember, ghost[4] is the blue, vulnerable ghost
-    ghosts[i] = ghost(i)
+first_ghost = ghost(0)
+second_ghost = ghost(1)
+third_ghost = ghost(2)
+fourth_ghost = ghost(3)
+ghosts_keys = {
+    first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
+    second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
+    third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
+    fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
+}
+ghosts = ghosts_keys.keys() + [ghost(4), ghost(5)]
 
 # create piece of fruit
 thisFruit = fruit()
@@ -1475,7 +1436,6 @@ while True:
     if thisGame.mode == 1:
         # normal gameplay mode
         CheckInputs1()
-        CheckInputs2()
 
         thisGame.modeTimer += 1
         for player in players:
@@ -1502,7 +1462,6 @@ while True:
     elif thisGame.mode == 3:
         # game over
         CheckInputs1()
-        CheckInputs2()
 
     elif thisGame.mode == 4:
         # waiting to start
