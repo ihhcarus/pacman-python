@@ -70,7 +70,7 @@ pygame.display.set_caption("Pacman")
 
 screen = pygame.display.get_surface()
 
-img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert()
+img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
 # snd_pellet = {}
 # # snd_pellet[0] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav"))
@@ -211,11 +211,11 @@ class game():
         # numerical display digits
         self.digit = {}
         for i in range(0, 10, 1):
-            self.digit[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", str(i) + ".gif")).convert()
-        self.imLife = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "life.gif")).convert()
-        self.imGameOver = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "gameover.gif")).convert()
-        self.imReady = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready.gif")).convert()
-        self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert()
+            self.digit[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", str(i) + ".gif")).convert_alpha()
+        self.imLife = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "life.gif")).convert_alpha()
+        self.imGameOver = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "gameover.gif")).convert_alpha()
+        self.imReady = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready.gif")).convert_alpha()
+        self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert_alpha()
         self.imHiscores = self.makehiscorelist()
 
     def StartNewGame(self):
@@ -520,7 +520,7 @@ class ghost():
 
         self.anim = {}
         for i in range(1, 7, 1):
-            self.anim[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "ghost " + str(i) + ".gif")).convert()
+            self.anim[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "ghost " + str(i) + ".gif")).convert_alpha()
 
             # change the ghost color in this frame
             for y in range(0, TILE_HEIGHT, 1):
@@ -672,7 +672,7 @@ class fruit():
 
         self.imFruit = {}
         for i in range(0, 5, 1):
-            self.imFruit[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "fruit " + str(i) + ".gif")).convert()
+            self.imFruit[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "fruit " + str(i) + ".gif")).convert_alpha()
 
         self.currentPath = ""
         self.fruitType = 1
@@ -786,11 +786,11 @@ class PacMan:
         self.anim_current = {}
 
         for i in range(1, 9, 1):
-            self.anim_left[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert()
-            self.anim_right[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-r " + str(i) + ".gif")).convert()
-            self.anim_up[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-u " + str(i) + ".gif")).convert()
-            self.anim_down[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-d " + str(i) + ".gif")).convert()
-            self.anim_stopped[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman.gif")).convert()
+            self.anim_left[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert_alpha()
+            self.anim_right[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-r " + str(i) + ".gif")).convert_alpha()
+            self.anim_up[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-u " + str(i) + ".gif")).convert_alpha()
+            self.anim_down[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-d " + str(i) + ".gif")).convert_alpha()
+            self.anim_stopped[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman.gif")).convert_alpha()
 
         self.pellet_snd_num = 0  # ?
 
@@ -1354,7 +1354,7 @@ def GetCrossRef():
 
             thisID = int(str_splitBySpace[0])
             if not thisID in NO_GIF_TILES:
-                tileIDImage[thisID] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", str_splitBySpace[1] + ".gif")).convert()
+                tileIDImage[thisID] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", str_splitBySpace[1] + ".gif")).convert_alpha()
             else:
                 tileIDImage[thisID] = pygame.Surface((TILE_WIDTH, TILE_HEIGHT))
 
