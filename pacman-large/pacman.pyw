@@ -1315,11 +1315,11 @@ def CheckInputs1():
                 if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                     ghost.vel_x = 0
                     ghost.vel_y = -ghost.speed
-            elif pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-                sys.exit(0)
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
             thisGame.StartNewGame()
+    if pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
+        sys.exit(0)
 
 
 # _____________________________________________
