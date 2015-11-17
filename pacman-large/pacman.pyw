@@ -197,9 +197,9 @@ class game():
         self.SetMode(3)
 
         # camera variables
-        self.screenPixelPos = (-(768 - (768 / 2)), -60)  # absolute x,y position of the screen from the upper-left corner of the level
+        self.screenPixelPos = (0, 0)  # absolute x,y position of the screen from the upper-left corner of the level
         self.screenNearestTilePos = (0, 0)  # nearest-tile position of the screen from the UL corner
-        self.screenPixelOffset = (-(768 - (768 / 2)), -60)  # offset in pixels of the screen from its nearest-tile position
+        self.screenPixelOffset = (0, 0)  # offset in pixels of the screen from its nearest-tile position
         self.screenTileSize = (60, 60)
         self.screenSize = (1280, 768)
 
@@ -242,7 +242,8 @@ class game():
 
         if self.mode == 3:
             if thisGame.lives == -1:
-                screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
+                #screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
+                screen.blit(self.imGameOver, (0, 0))
         elif self.mode == 4:
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 30, self.screenSize[1] / 2 + 12))
 
