@@ -197,15 +197,10 @@ class game():
         self.SetMode(3)
 
         # camera variables
-        # self.screenPixelPos = (1280 - (1280 / 2), 768 - (768 / 2))  # absolute x,y position of the screen from the upper-left corner of the level
         self.screenPixelPos = (-(768 - (768 / 2)), -60)  # absolute x,y position of the screen from the upper-left corner of the level
         self.screenNearestTilePos = (0, 0)  # nearest-tile position of the screen from the UL corner
         self.screenPixelOffset = (-(768 - (768 / 2)), -60)  # offset in pixels of the screen from its nearest-tile position
-
-        # self.screenTileSize = (30, 28)
         self.screenTileSize = (60, 60)
-        self.screenSize = (self.screenTileSize[1] * TILE_WIDTH, self.screenTileSize[0] * TILE_HEIGHT)
-
         self.screenSize = (1280, 768)
 
         # numerical display digits
@@ -215,7 +210,7 @@ class game():
         self.imLife = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "life.gif")).convert_alpha()
         self.imGameOver = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "gameover.gif")).convert_alpha()
         self.imReady = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready.gif")).convert_alpha()
-        self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert_alpha()
+        self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert()
         self.imHiscores = self.makehiscorelist()
 
     def StartNewGame(self):
@@ -237,7 +232,6 @@ class game():
 
         self.score += amount
 
-
     def DrawScore(self):
         self.DrawNumber(self.score, (SCORE_XOFFSET, self.screenSize[1] - SCORE_YOFFSET))
 
@@ -247,7 +241,8 @@ class game():
         screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
 
         if self.mode == 3:
-            screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
+            if thisGame.lives == -1:
+                screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
         elif self.mode == 4:
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 30, self.screenSize[1] / 2 + 12))
 
@@ -298,7 +293,6 @@ class game():
         player.vel_x = 0
         player.vel_y = 0
         player.anim_current = player.anim_stopped
-
 
     def SetMode(self, newMode):
         self.mode = newMode
@@ -1080,34 +1074,25 @@ class level():
                 # print outputLine
 
     def DrawMap(self):
-
         self.powerPelletBlinkTimer += 1
         if self.powerPelletBlinkTimer == 60:
             self.powerPelletBlinkTimer = 0
 
         for row in range(-1, thisGame.screenTileSize[0] + 1, 1):
-            outputLine = ""
             for col in range(-1, thisGame.screenTileSize[1] + 1, 1):
-
                 # row containing tile that actually goes here
                 actualRow = thisGame.screenNearestTilePos[0] + row
                 actualCol = thisGame.screenNearestTilePos[1] + col
-
                 useTile = self.GetMapTile((actualRow, actualCol))
                 if not useTile == 0 and not useTile == tileID['door-h'] and not useTile == tileID['door-v']:
                     # if this isn't a blank tile
-
                     if useTile == tileID['pellet-power']:
                         if self.powerPelletBlinkTimer < 30:
                             screen.blit(tileIDImage[useTile], (col * TILE_WIDTH - thisGame.screenPixelOffset[0], row * TILE_HEIGHT - thisGame.screenPixelOffset[1]))
-
                     elif useTile == tileID['showlogo']:
-                        screen.blit(thisGame.imLogo, ((1280 / 2) - 155, 80))
-
+                        screen.blit(thisGame.imLogo, (0, 0))
                     elif useTile == tileID['hiscores']:
                         pass
-                        # screen.blit(thisGame.imHiscores, (col * TILE_WIDTH - thisGame.screenPixelOffset[0], row * TILE_HEIGHT - thisGame.screenPixelOffset[1]))
-
                     else:
                         screen.blit(tileIDImage[useTile], (col * TILE_WIDTH - thisGame.screenPixelOffset[0], row * TILE_HEIGHT - thisGame.screenPixelOffset[1]))
 
@@ -1300,17 +1285,14 @@ def CheckInputs1():
                 if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                     ghost.vel_x = ghost.speed
                     ghost.vel_y = 0
-
             elif pygame.key.get_pressed()[keys[1]] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
                 if not (ghost.vel_x == -ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x - ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                     ghost.vel_x = -ghost.speed
                     ghost.vel_y = 0
-
             elif pygame.key.get_pressed()[keys[2]] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
                 if not (ghost.vel_x == 0 and ghost.vel_y == ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y + ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                     ghost.vel_x = 0
                     ghost.vel_y = ghost.speed
-
             elif pygame.key.get_pressed()[keys[3]] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
                 if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                     ghost.vel_x = 0
