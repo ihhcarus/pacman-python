@@ -497,8 +497,8 @@ class ghost():
         self.vel_y = 0
         self.speed = 1
 
-        self.nearestRow = 0
-        self.nearestCol = 0
+        self.nearest_row = 0
+        self.nearest_col = 0
 
         self.id = ghostID
 
@@ -596,55 +596,69 @@ class ghost():
             self.animDelay = 0
 
     def Move(self):
-        self.nearest_row = int(((self.y + (TILE_WIDTH / 2)) / TILE_WIDTH))
-        self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
-        # make sure the current velocity will not cause a collision before moving
-        if not thisLevel.CheckIfHitWall((self.x + self.vel_x, self.y + self.vel_y), (self.nearest_row, self.nearest_col)):
+        if self.state == 1 or self.state == 2:
+            self.nearest_row = int(((self.y + (TILE_WIDTH / 2)) / TILE_WIDTH))
+            self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
+            # make sure the current velocity will not cause a collision before moving
+            if not thisLevel.CheckIfHitWall((self.x + self.vel_x, self.y + self.vel_y), (self.nearest_row, self.nearest_col)):
+                self.x += self.vel_x
+                self.y += self.vel_y
+            # we're going to hit a wall -> stop moving
+            else:
+                self.vel_x = 0
+                self.vel_y = 0
+        elif self.state == 3:
+            print 'move'
             self.x += self.vel_x
             self.y += self.vel_y
-        # we're going to hit a wall -> stop moving
-        else:
-            self.vel_x = 0
-            self.vel_y = 0
+            if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
+                if len(self.currentPath) > 0:
+                    print 'move1'
+                    self.currentPath = self.currentPath[1:]
+                    self.FollowNextPathWay()
+                else:
+                    self.state = 1
+                    print 'move2'
+                    # self.x = self.nearest_col * TILE_WIDTH
+                    # self.y = self.nearest_row * TILE_HEIGHT
+                    # # chase pac-man
+                    # self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player1.nearest_row, player1.nearest_col))
+                    # self.FollowNextPathWay()
 
     def FollowNextPathWay(self):
-
-        # print "Ghost " + str(self.id) + " rem: " + self.currentPath
-
+        print self.currentPath
         # only follow this pathway if there is a possible path found!
-        if not self.currentPath == False:
-
+        if self.currentPath:
+            print 1
             if len(self.currentPath) > 0:
+                print 2
                 if self.currentPath[0] == "L":
-                    (self.velX, self.velY) = (-self.speed, 0)
+                    (self.vel_x, self.vel_y) = (-self.speed, 0)
                 elif self.currentPath[0] == "R":
-                    (self.velX, self.velY) = (self.speed, 0)
+                    (self.vel_x, self.vel_y) = (self.speed, 0)
                 elif self.currentPath[0] == "U":
-                    (self.velX, self.velY) = (0, -self.speed)
+                    (self.vel_x, self.vel_y) = (0, -self.speed)
                 elif self.currentPath[0] == "D":
-                    (self.velX, self.velY) = (0, self.speed)
-
+                    (self.vel_x, self.vel_y) = (0, self.speed)
             else:
+                print 3
                 # this ghost has reached his destination!!
-
                 if not self.state == 3:
+                    print 4
                     # chase pac-man
-                    self.currentPath = path.find_path((self.nearestRow, self.nearestCol), (player.nearest_row, player.nearest_col))
+                    self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player.nearest_row, player.nearest_col))
                     self.FollowNextPathWay()
-
                 else:
+                    print 5
                     # glasses found way back to ghost box
                     self.state = 1
-                    self.speed = self.speed / 4
-
+                    self.speed /= 4
                     # give ghost a path to a random spot (containing a pellet)
                     (randRow, randCol) = (0, 0)
-
                     while not thisLevel.GetMapTile((randRow, randCol)) == tileID['pellet'] or (randRow, randCol) == (0, 0):
                         randRow = random.randint(1, thisLevel.lvlHeight - 2)
                         randCol = random.randint(1, thisLevel.lvlWidth - 2)
-
-                    self.currentPath = path.find_path((self.nearestRow, self.nearestCol), (randRow, randCol))
+                    self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (randRow, randCol))
                     self.FollowNextPathWay()
 
 
@@ -780,6 +794,8 @@ class PacMan:
         self.anim_stopped = {}
         self.anim_current = {}
 
+        self.currentPath = ""
+
         for i in range(1, 9, 1):
             self.anim_left[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert_alpha()
             self.anim_right[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-r " + str(i) + ".gif")).convert_alpha()
@@ -790,68 +806,76 @@ class PacMan:
         self.pellet_snd_num = 0  # ?
 
     def move(self):
-        self.nearest_row = int(((self.y + (TILE_WIDTH / 2)) / TILE_WIDTH))
-        self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
-        # make sure the current velocity will not cause a collision before moving
-        if not thisLevel.CheckIfHitWall((self.x + self.vel_x, self.y + self.vel_y), (self.nearest_row, self.nearest_col)):
-            self.x += self.vel_x
-            self.y += self.vel_y
-            # check for collisions with other tiles (pellets, etc)
-            thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
-            # check for collisions with the ghosts
-            for i in range(0, len(ghosts)):
-                if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
-                    if ghosts[i].state == 1:
-                        # ghost is normal, pacman dies
-                        thisGame.SetMode(2)
-                    elif ghosts[i].state == 2:
-                        # ghost is vulnerable, ghost dies
-                        thisGame.AddToScore(thisGame.ghostValue)
-                        thisGame.ghostValue = thisGame.ghostValue * 2
-                        ghosts[i].state = 3
-                        ghosts[i].speed = ghosts[i].speed * 4
-                        # and send them to the ghost box
-                        ghosts[i].x = ghosts[i].nearestCol * TILE_WIDTH
-                        ghosts[i].y = ghosts[i].nearestRow * TILE_HEIGHT
-                        ghosts[i].currentPath = path.find_path((ghosts[i].nearestRow, ghosts[i].nearestCol), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
-                        ghosts[i].FollowNextPathWay()
-                        # set game mode to brief pause after eating
-                        thisGame.SetMode(5)
-            # check for collisions with the fruit
-            if thisFruit.active:
-                if thisLevel.CheckIfHit((self.x, self.y), (thisFruit.x, thisFruit.y), TILE_WIDTH / 2):
-                    thisGame.AddToScore(2500)
-                    thisFruit.active = False
-                    thisGame.fruitTimer = 0
-                    thisGame.fruitScoreTimer = 120
-        # we're going to hit a wall -> stop moving
-        else:
-            self.vel_x = 0
-            self.vel_y = 0
-        # deal with power-pellet ghost timer
-        if thisGame.ghostTimer > 0:
-            thisGame.ghostTimer -= 1
-            if thisGame.ghostTimer == 0:
-                for i in range(0, 4, 1):
-                    if ghosts[i].state == 2:
-                        ghosts[i].state = 1
-                self.ghostValue = 0
-        # deal with fruit timer
-        thisGame.fruitTimer += 1
-        if thisGame.fruitTimer == 500:
-            pathway_pair = thisLevel.GetPathwayPairPos()
-            if not pathway_pair == False:
-                pathway_entrance = pathway_pair[0]
-                pathway_exit = pathway_pair[1]
-                thisFruit.active = True
-                thisFruit.nearestRow = pathway_entrance[0]
-                thisFruit.nearestCol = pathway_entrance[1]
-                thisFruit.x = thisFruit.nearestCol * TILE_WIDTH
-                thisFruit.y = thisFruit.nearestRow * TILE_HEIGHT
-                thisFruit.currentPath = path.find_path((thisFruit.nearestRow, thisFruit.nearestCol), pathway_exit)
-                thisFruit.FollowNextPathWay()
-        if thisGame.fruitScoreTimer > 0:
-            thisGame.fruitScoreTimer -= 1
+        self.x += self.vel_x
+        self.y += self.vel_y
+        self.nearest_row = int(((self.y + (TILE_HEIGHT / 2)) / TILE_HEIGHT))
+        self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_WIDTH))
+
+        thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
+        for i in range(0, len(ghosts)):
+            if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
+                if ghosts[i].state == 1:
+                    # ghost is normal, pacman dies
+                    thisGame.SetMode(2)
+                elif ghosts[i].state == 2:
+                    # ghost is vulnerable, ghost dies
+                    thisGame.AddToScore(thisGame.ghostValue)
+                    thisGame.ghostValue = thisGame.ghostValue * 2
+                    ghosts[i].state = 3
+                    ghosts[i].speed = ghosts[i].speed * 4
+                    # and send them to the ghost box
+                    # ghosts[i].x = ghosts[i].nearestCol * TILE_WIDTH
+                    # ghosts[i].y = ghosts[i].nearestRow * TILE_HEIGHT
+                    ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
+                    ghosts[i].FollowNextPathWay()
+                    print 'pegou'
+                    print ghosts[i].currentPath
+                    # set game mode to brief pause after eating
+                    thisGame.SetMode(5)
+
+#         if thisGame.ghostTimer > 0:
+#             thisGame.ghostTimer -= 1
+#             if thisGame.ghostTimer == 0:
+#                 for i in range(0, 4, 1):
+#                     if ghosts[i].state == 2:
+#                         ghosts[i].state = 1
+#                 self.ghostValue = 0
+
+        if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
+            # if the ghost is lined up with the grid again meaning, it's time to go to the next path item
+            if len(self.currentPath) > 0:
+                self.currentPath = self.currentPath[1:]
+                self.FollowNextPathWay()
+            else:
+                self.x = self.nearest_col * TILE_WIDTH
+                self.y = self.nearest_row * TILE_HEIGHT
+                # chase pac-man
+                self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player1.nearest_row, player1.nearest_col))
+                self.FollowNextPathWay()
+
+    def FollowNextPathWay(self):
+        # only follow this pathway if there is a possible path found!
+        if not self.currentPath == False:
+            if len(self.currentPath) > 0:
+                if self.currentPath[0] == "L":
+                    (self.vel_x, self.vel_y) = (-self.speed, 0)
+                elif self.currentPath[0] == "R":
+                    (self.vel_x, self.vel_y) = (self.speed, 0)
+                elif self.currentPath[0] == "U":
+                    (self.vel_x, self.vel_y) = (0, -self.speed)
+                elif self.currentPath[0] == "D":
+                    (self.vel_x, self.vel_y) = (0, self.speed)
+            else:
+                # this ghost has reached his destination!!
+                # glasses found way back to ghost box
+                # self.speed = self.speed / 4
+                # give ghost a path to a random spot (containing a pellet)
+                (randRow, randCol) = (0, 0)
+                while not thisLevel.GetMapTile((randRow, randCol)) == tileID['pellet'] or (randRow, randCol) == (0, 0):
+                    randRow = random.randint(1, thisLevel.lvlHeight - 2)
+                    randCol = random.randint(1, thisLevel.lvlWidth - 2)
+                self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (randRow, randCol))
+                self.FollowNextPathWay()
 
     def draw(self):
         if thisGame.mode == 3:
@@ -1242,8 +1266,8 @@ class level():
 
             ghosts[i].x = ghosts[i].homeX
             ghosts[i].y = ghosts[i].homeY
-            ghosts[i].velX = 0
-            ghosts[i].velY = 0
+            ghosts[i].vel_x = 0
+            ghosts[i].vel_y = 0
             ghosts[i].state = 1
             ghosts[i].speed = 1
             ghosts[i].Move()
@@ -1256,7 +1280,7 @@ class level():
                 randCol = random.randint(1, self.lvlWidth - 2)
 
             # print "Ghost " + str(i) + " headed towards " + str((randRow, randCol))
-            ghosts[i].currentPath = path.find_path((ghosts[i].nearestRow, ghosts[i].nearestCol), (randRow, randCol))
+            ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (randRow, randCol))
             ghosts[i].FollowNextPathWay()
 
         thisFruit.active = False
