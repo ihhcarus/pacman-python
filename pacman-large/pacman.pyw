@@ -824,8 +824,8 @@ class PacMan:
                     ghosts[i].state = 3
                     ghosts[i].speed = ghosts[i].speed * 4
                     # and send them to the ghost box
-                    # ghosts[i].x = ghosts[i].nearestCol * TILE_WIDTH
-                    # ghosts[i].y = ghosts[i].nearestRow * TILE_HEIGHT
+                    ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
+                    ghosts[i].y = ghosts[i].nearest_row * TILE_HEIGHT
                     ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
                     ghosts[i].FollowNextPathWay()
                     print 'pegou'
