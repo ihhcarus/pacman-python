@@ -845,10 +845,21 @@ class PacMan:
                 (self.vel_x, self.vel_y) = (0, self.speed)
         else:
             (rand_row, rand_col) = (0, 0)
-            # give pacman a path to a random spot (containing a pellet)
-            while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
-                rand_row = random.randint(1, thisLevel.lvlHeight - 2)
-                rand_col = random.randint(1, thisLevel.lvlWidth - 2)
+            pellets = [tileID['pellet'], tileID['pellet-power']]
+            # before sending pacman to a random pellet, check if there is no pellets around him
+            if thisLevel.GetMapTile((self.nearest_row + 1, self.nearest_col)) in pellets:
+                (rand_row, rand_col) = (self.nearest_row + 1, self.nearest_col)
+            elif thisLevel.GetMapTile((self.nearest_row - 1, self.nearest_col)) in pellets:
+                (rand_row, rand_col) = (self.nearest_row - 1, self.nearest_col)
+            elif thisLevel.GetMapTile((self.nearest_row, self.nearest_col + 1)) in pellets:
+                (rand_row, rand_col) = (self.nearest_row, self.nearest_col + 1)
+            elif thisLevel.GetMapTile((self.nearest_row, self.nearest_col - 1)) in pellets:
+                (rand_row, rand_col) = (self.nearest_row, self.nearest_col - 1)
+            else:
+                # give pacman a path to a random spot (containing a pellet)
+                while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
+                    rand_row = random.randint(1, thisLevel.lvlHeight - 2)
+                    rand_col = random.randint(1, thisLevel.lvlWidth - 2)
             self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (rand_row, rand_col))
             self.FollowNextPathWay()
 
