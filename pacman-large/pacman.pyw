@@ -815,6 +815,7 @@ class PacMan:
                     # set game mode to brief pause after eating
                     thisGame.SetMode(5)
 
+        # decrease ghost vulnerable timer
 #         if thisGame.ghostTimer > 0:
 #             thisGame.ghostTimer -= 1
 #             if thisGame.ghostTimer == 0:
@@ -827,37 +828,29 @@ class PacMan:
             # if the ghost is lined up with the grid again meaning, it's time to go to the next path item
             if len(self.currentPath) > 0:
                 self.currentPath = self.currentPath[1:]
-                self.FollowNextPathWay()
             else:
                 self.x = self.nearest_col * TILE_WIDTH
                 self.y = self.nearest_row * TILE_HEIGHT
-                # chase pac-man
-                self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player1.nearest_row, player1.nearest_col))
-                self.FollowNextPathWay()
+            self.FollowNextPathWay()
 
     def FollowNextPathWay(self):
-        # only follow this pathway if there is a possible path found!
-        if not self.currentPath == False:
-            if len(self.currentPath) > 0:
-                if self.currentPath[0] == "L":
-                    (self.vel_x, self.vel_y) = (-self.speed, 0)
-                elif self.currentPath[0] == "R":
-                    (self.vel_x, self.vel_y) = (self.speed, 0)
-                elif self.currentPath[0] == "U":
-                    (self.vel_x, self.vel_y) = (0, -self.speed)
-                elif self.currentPath[0] == "D":
-                    (self.vel_x, self.vel_y) = (0, self.speed)
-            else:
-                # this ghost has reached his destination!!
-                # glasses found way back to ghost box
-                # self.speed = self.speed / 4
-                # give ghost a path to a random spot (containing a pellet)
-                (randRow, randCol) = (0, 0)
-                while not thisLevel.GetMapTile((randRow, randCol)) == tileID['pellet'] or (randRow, randCol) == (0, 0):
-                    randRow = random.randint(1, thisLevel.lvlHeight - 2)
-                    randCol = random.randint(1, thisLevel.lvlWidth - 2)
-                self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (randRow, randCol))
-                self.FollowNextPathWay()
+        if len(self.currentPath) > 0:
+            if self.currentPath[0] == "L":
+                (self.vel_x, self.vel_y) = (-self.speed, 0)
+            elif self.currentPath[0] == "R":
+                (self.vel_x, self.vel_y) = (self.speed, 0)
+            elif self.currentPath[0] == "U":
+                (self.vel_x, self.vel_y) = (0, -self.speed)
+            elif self.currentPath[0] == "D":
+                (self.vel_x, self.vel_y) = (0, self.speed)
+        else:
+            (rand_row, rand_col) = (0, 0)
+            # give pacman a path to a random spot (containing a pellet)
+            while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
+                rand_row = random.randint(1, thisLevel.lvlHeight - 2)
+                rand_col = random.randint(1, thisLevel.lvlWidth - 2)
+            self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (rand_row, rand_col))
+            self.FollowNextPathWay()
 
     def draw(self):
         if thisGame.mode == 3:
