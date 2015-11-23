@@ -299,8 +299,6 @@ class game():
         self.mode = newMode
         self.modeTimer = 0
 
-        # print " ***** GAME MODE IS NOW ***** " + str(newMode)
-
 
 class node():
     def __init__(self):
@@ -608,30 +606,19 @@ class ghost():
                 self.vel_x = 0
                 self.vel_y = 0
         elif self.state == 3:
-            print 'move'
             self.x += self.vel_x
             self.y += self.vel_y
             if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
                 if len(self.currentPath) > 0:
-                    print 'move1'
                     self.currentPath = self.currentPath[1:]
                     self.FollowNextPathWay()
                 else:
                     self.state = 1
-                    print 'move2'
-                    # self.x = self.nearest_col * TILE_WIDTH
-                    # self.y = self.nearest_row * TILE_HEIGHT
-                    # # chase pac-man
-                    # self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player1.nearest_row, player1.nearest_col))
-                    # self.FollowNextPathWay()
 
     def FollowNextPathWay(self):
-        print self.currentPath
         # only follow this pathway if there is a possible path found!
         if self.currentPath:
-            print 1
             if len(self.currentPath) > 0:
-                print 2
                 if self.currentPath[0] == "L":
                     (self.vel_x, self.vel_y) = (-self.speed, 0)
                 elif self.currentPath[0] == "R":
@@ -641,15 +628,12 @@ class ghost():
                 elif self.currentPath[0] == "D":
                     (self.vel_x, self.vel_y) = (0, self.speed)
             else:
-                print 3
                 # this ghost has reached his destination!!
                 if not self.state == 3:
-                    print 4
                     # chase pac-man
                     self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player.nearest_row, player.nearest_col))
                     self.FollowNextPathWay()
                 else:
-                    print 5
                     # glasses found way back to ghost box
                     self.state = 1
                     self.speed /= 4
@@ -826,10 +810,8 @@ class PacMan:
                     # and send them to the ghost box
                     ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
                     ghosts[i].y = ghosts[i].nearest_row * TILE_HEIGHT
-                    ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (thisLevel.GetGhostBoxPos()[0] + 1, thisLevel.GetGhostBoxPos()[1]))
+                    ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (thisLevel.GetGhostBoxPos()[0], thisLevel.GetGhostBoxPos()[1]))
                     ghosts[i].FollowNextPathWay()
-                    print 'pegou'
-                    print ghosts[i].currentPath
                     # set game mode to brief pause after eating
                     thisGame.SetMode(5)
 
@@ -1096,8 +1078,6 @@ class level():
             for col in range(0, self.lvlWidth, 1):
                 outputLine += str(self.GetMapTile((row, col))) + ", "
 
-                # print outputLine
-
     def DrawMap(self):
         self.powerPelletBlinkTimer += 1
         if self.powerPelletBlinkTimer == 60:
@@ -1137,7 +1117,6 @@ class level():
 
             lineNum += 1
 
-            # print " ------- Level Line " + str(lineNum) + " -------- "
             while len(line) > 0 and (line[-1] == "\n" or line[-1] == "\r"): line = line[:-1]
             while len(line) > 0 and (line[0] == "\n" or line[0] == "\r"): line = line[1:]
             str_splitBySpace = line.split(' ')
@@ -1146,7 +1125,6 @@ class level():
 
             if (j == "'" or j == ""):
                 # comment / whitespace line
-                # print " ignoring comment line.. "
                 useLine = False
             elif j == "#":
                 # special divider / attribute line
@@ -1156,11 +1134,9 @@ class level():
 
                 if firstWord == "lvlwidth":
                     self.lvlWidth = int(str_splitBySpace[2])
-                # print "Width is " + str( self.lvlWidth )
 
                 elif firstWord == "lvlheight":
                     self.lvlHeight = int(str_splitBySpace[2])
-                # print "Height is " + str( self.lvlHeight )
 
                 elif firstWord == "edgecolor":
                     # edge color keyword for backwards compatibility (single edge color) mazes
@@ -1199,12 +1175,10 @@ class level():
 
                 elif firstWord == "startleveldata":
                     isReadingLevelData = True
-                    # print "Level data has begun"
                     rowNum = 0
 
                 elif firstWord == "endleveldata":
                     isReadingLevelData = False
-                    # print "Level data has ended"
 
             else:
                 useLine = True
@@ -1214,9 +1188,6 @@ class level():
             if useLine == True:
 
                 if isReadingLevelData == True:
-
-                    # print str( len(str_splitBySpace) ) + " tiles in this column"
-
                     for k in range(0, self.lvlWidth, 1):
                         self.SetMapTile((rowNum, k), int(str_splitBySpace[k]))
 
@@ -1279,7 +1250,6 @@ class level():
                 randRow = random.randint(1, self.lvlHeight - 2)
                 randCol = random.randint(1, self.lvlWidth - 2)
 
-            # print "Ghost " + str(i) + " headed towards " + str((randRow, randCol))
             ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (randRow, randCol))
             ghosts[i].FollowNextPathWay()
 
@@ -1339,7 +1309,6 @@ def GetCrossRef():
     useLine = False
 
     for i in f.readlines():
-        # print " ========= Line " + str(lineNum) + " ============ "
         while len(i) > 0 and (i[-1] == '\n' or i[-1] == '\r'): i = i[:-1]
         while len(i) > 0 and (i[0] == '\n' or i[0] == '\r'): i = i[1:]
         str_splitBySpace = i.split(' ')
@@ -1348,11 +1317,8 @@ def GetCrossRef():
 
         if (j == "'" or j == "" or j == "#"):
             # comment / whitespace line
-            # print " ignoring comment line.. "
             useLine = False
         else:
-            # print str(wordNum) + ". " + j
-
             useLine = True
 
         if useLine == True:
@@ -1384,8 +1350,6 @@ def GetCrossRef():
                     elif tileIDImage[thisID].get_at((x, y)) == IMG_PELLET_COLOR:
                         # pellet color
                         tileIDImage[thisID].set_at((x, y), thisLevel.pelletColor)
-
-                        # print str_splitBySpace[0] + " is married to " + str_splitBySpace[1]
         lineNum += 1
 
 
