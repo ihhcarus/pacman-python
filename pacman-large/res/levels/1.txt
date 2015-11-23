@@ -5,6 +5,8 @@
 # fillcolor 0 0 0
 # pelletcolor 255 255 255
 # fruittype 1
+# padw 16
+# padh 3
 
 # startleveldata
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
