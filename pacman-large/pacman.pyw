@@ -613,37 +613,20 @@ class ghost():
                     self.currentPath = self.currentPath[1:]
                     self.FollowNextPathWay()
                 else:
+                    self.speed /= 4
                     self.state = 1
 
     def FollowNextPathWay(self):
         # only follow this pathway if there is a possible path found!
-        if self.currentPath:
-            if len(self.currentPath) > 0:
-                if self.currentPath[0] == "L":
-                    (self.vel_x, self.vel_y) = (-self.speed, 0)
-                elif self.currentPath[0] == "R":
-                    (self.vel_x, self.vel_y) = (self.speed, 0)
-                elif self.currentPath[0] == "U":
-                    (self.vel_x, self.vel_y) = (0, -self.speed)
-                elif self.currentPath[0] == "D":
-                    (self.vel_x, self.vel_y) = (0, self.speed)
-            else:
-                # this ghost has reached his destination!!
-                if not self.state == 3:
-                    # chase pac-man
-                    self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (player.nearest_row, player.nearest_col))
-                    self.FollowNextPathWay()
-                else:
-                    # glasses found way back to ghost box
-                    self.state = 1
-                    self.speed /= 4
-                    # give ghost a path to a random spot (containing a pellet)
-                    (randRow, randCol) = (0, 0)
-                    while not thisLevel.GetMapTile((randRow, randCol)) == tileID['pellet'] or (randRow, randCol) == (0, 0):
-                        randRow = random.randint(1, thisLevel.lvlHeight - 2)
-                        randCol = random.randint(1, thisLevel.lvlWidth - 2)
-                    self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (randRow, randCol))
-                    self.FollowNextPathWay()
+        if len(self.currentPath) > 0:
+            if self.currentPath[0] == "L":
+                (self.vel_x, self.vel_y) = (-self.speed, 0)
+            elif self.currentPath[0] == "R":
+                (self.vel_x, self.vel_y) = (self.speed, 0)
+            elif self.currentPath[0] == "U":
+                (self.vel_x, self.vel_y) = (0, -self.speed)
+            elif self.currentPath[0] == "D":
+                (self.vel_x, self.vel_y) = (0, self.speed)
 
 
 class fruit():
@@ -992,20 +975,20 @@ class level():
                                 ghosts[i].state = 2
 
                                 """
-								# Must line up with grid before invoking a new path (for now)
-								ghosts[i].x = ghosts[i].nearestCol * TILE_HEIGHT
-								ghosts[i].y = ghosts[i].nearestRow * TILE_WIDTH
+                                # Must line up with grid before invoking a new path (for now)
+                                ghosts[i].x = ghosts[i].nearestCol * TILE_HEIGHT
+                                ghosts[i].y = ghosts[i].nearestRow * TILE_WIDTH
 
-								# give each ghost a path to a random spot (containing a pellet)
-								(randRow, randCol) = (0, 0)
+                                # give each ghost a path to a random spot (containing a pellet)
+                                (randRow, randCol) = (0, 0)
 
-								while not self.GetMapTile((randRow, randCol)) == tileID[ 'pellet' ] or (randRow, randCol) == (0, 0):
-									randRow = random.randint(1, self.lvlHeight - 2)
-									randCol = random.randint(1, self.lvlWidth - 2)
-								ghosts[i].currentPath = path.FindPath( (ghosts[i].nearestRow, ghosts[i].nearestCol), (randRow, randCol) )
+                                while not self.GetMapTile((randRow, randCol)) == tileID[ 'pellet' ] or (randRow, randCol) == (0, 0):
+                                    randRow = random.randint(1, self.lvlHeight - 2)
+                                    randCol = random.randint(1, self.lvlWidth - 2)
+                                ghosts[i].currentPath = path.FindPath( (ghosts[i].nearestRow, ghosts[i].nearestCol), (randRow, randCol) )
 
-								ghosts[i].FollowNextPathWay()
-								"""
+                                ghosts[i].FollowNextPathWay()
+                                """
 
                     elif result == tileID['door-h']:
                         # ran into a horizontal door
@@ -1280,22 +1263,23 @@ def CheckIfCloseButton(events):
 def CheckInputs1():
     if thisGame.mode == 1:
         for ghost, keys in ghosts_keys.items():
-            if pygame.key.get_pressed()[keys[0]] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
-                if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
-                    ghost.vel_x = ghost.speed
-                    ghost.vel_y = 0
-            elif pygame.key.get_pressed()[keys[1]] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
-                if not (ghost.vel_x == -ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x - ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
-                    ghost.vel_x = -ghost.speed
-                    ghost.vel_y = 0
-            elif pygame.key.get_pressed()[keys[2]] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
-                if not (ghost.vel_x == 0 and ghost.vel_y == ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y + ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
-                    ghost.vel_x = 0
-                    ghost.vel_y = ghost.speed
-            elif pygame.key.get_pressed()[keys[3]] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
-                if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
-                    ghost.vel_x = 0
-                    ghost.vel_y = -ghost.speed
+            if ghost.state != 3:
+                if pygame.key.get_pressed()[keys[0]] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
+                    if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
+                        ghost.vel_x = ghost.speed
+                        ghost.vel_y = 0
+                elif pygame.key.get_pressed()[keys[1]] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
+                    if not (ghost.vel_x == -ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x - ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
+                        ghost.vel_x = -ghost.speed
+                        ghost.vel_y = 0
+                elif pygame.key.get_pressed()[keys[2]] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
+                    if not (ghost.vel_x == 0 and ghost.vel_y == ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y + ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
+                        ghost.vel_x = 0
+                        ghost.vel_y = ghost.speed
+                elif pygame.key.get_pressed()[keys[3]] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
+                    if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
+                        ghost.vel_x = 0
+                        ghost.vel_y = -ghost.speed
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
             thisGame.StartNewGame()
