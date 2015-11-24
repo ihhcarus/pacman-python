@@ -565,6 +565,7 @@ class ghost():
         if self.state == 1:
             # draw regular ghost (this one)
             screen.blit(self.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+            snd_eyes.stop()
         elif self.state == 2:
             # draw vulnerable ghost
             if thisGame.ghostTimer > 100:
@@ -580,7 +581,6 @@ class ghost():
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-            # snd_eyes.play() ### ARRUMAR
 
         if thisGame.mode == 6 or thisGame.mode == 7:
             # don't animate ghost if the level is complete
@@ -802,6 +802,10 @@ class PacMan:
                     snd_eatgh.play()
                     ghosts[i].state = 3
                     ghosts[i].speed = ghosts[i].speed * 4
+
+                    snd_eyes.stop()
+                    snd_eyes.play(999)
+
                     # and send them to the ghost box
                     ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
                     ghosts[i].y = ghosts[i].nearest_row * TILE_HEIGHT
