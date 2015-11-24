@@ -227,7 +227,7 @@ class game():
 
         for specialScore in extraLifeSet:
             if self.score < specialScore and self.score + amount >= specialScore:
-                # snd_extralife.play()
+                snd_extralife.play()
                 thisGame.lives += 1
 
         self.score += amount
