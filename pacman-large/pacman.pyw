@@ -59,8 +59,8 @@ IMG_EDGE_SHADOW_COLOR = (0xff, 0x00, 0xff, 0xff)
 IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 
 # Must come before pygame.init()
-# pygame.mixer.pre_init(22050, 16, 2, 512)
-# pygame.mixer.init()
+pygame.mixer.pre_init(44100, -16, 2, 4096)
+pygame.mixer.init()
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -72,14 +72,14 @@ screen = pygame.display.get_surface()
 
 img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
-# snd_pellet = {}
-# # snd_pellet[0] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav"))
-# # snd_pellet[1] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet2.wav"))
-# # snd_powerpellet = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "powerpellet.wav"))
-# # snd_eatgh = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatgh2.wav"))
-# # snd_fruitbounce = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
-# # snd_eatfruit = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
-# # snd_extralife = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "extralife.wav"))
+snd_pellet = {}
+snd_pellet[0] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav"))
+snd_pellet[1] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet2.wav"))
+snd_powerpellet = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "powerpellet.wav"))
+snd_eatgh = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatgh2.wav"))
+snd_fruitbounce = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
+snd_eatfruit = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
+snd_extralife = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "extralife.wav"))
 
 ghostcolor = {}
 ghostcolor[0] = (255, 0, 0, 255)
@@ -696,7 +696,7 @@ class fruit():
         elif self.bouncei == 16:
             self.bounceY = 0
             self.bouncei = 0
-            # snd_fruitbounce.play()
+            snd_fruitbounce.play()
 
         self.slowTimer += 1
         if self.slowTimer == 2:
@@ -947,7 +947,7 @@ class level():
                     if result == tileID['pellet']:
                         # got a pellet
                         thisLevel.SetMapTile((iRow, iCol), 0)
-                        # snd_pellet[player.pellet_snd_num].play()
+                        snd_pellet[player.pellet_snd_num].play()
                         player.pellet_snd_num = 1 - player.pellet_snd_num
 
                         thisLevel.pellets -= 1
@@ -963,8 +963,8 @@ class level():
                     elif result == tileID['pellet-power']:
                         # got a power pellet
                         thisLevel.SetMapTile((iRow, iCol), 0)
-                        # pygame.mixer.stop()
-                        # snd_powerpellet.play()
+                        pygame.mixer.stop()
+                        snd_powerpellet.play()
 
                         thisGame.AddToScore(100)
                         thisGame.ghostValue = 200
