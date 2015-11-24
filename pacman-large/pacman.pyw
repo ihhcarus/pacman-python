@@ -780,11 +780,11 @@ class PacMan:
         thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
         for i in range(0, len(ghosts)):
             if i == 0:
-                dist = sqrt(pow(player.x - ghosts[i].x, 2) + pow(player.y - ghosts[i].y, 2))
+                # player_ = player
+                player_ = ghosts[i + 1]
+                dist = sqrt(pow(player_.x - ghosts[i].x, 2) + pow(player_.y - ghosts[i].y, 2))
                 if dist < 100:
-                    player.vel_x = 0
-                    player.vel_y = 0
-                    thisLevel.get_quadrant(ghosts[i].nearest_col, ghosts[i].nearest_row)
+                    thisLevel.get_quadrant(ghosts[i].nearest_col, ghosts[i].nearest_row, player_.nearest_col, player_.nearest_row)
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
                     # ghost is normal, pacman dies
@@ -888,6 +888,83 @@ class level():
 
         self.pellets = 0
         self.powerPelletBlinkTimer = 0
+
+        self.q00 = (0, 0)
+        self.q01 = (0, 0)
+        self.q10 = (0, 0)
+        self.q11 = (0, 0)
+        self.quadrant_mapping = {}
+
+    def calculate_quadrants_ranges(self):
+        actual_map_w = self.lvlWidth - self.pad_w
+        actual_map_h = self.lvlHeight - self.pad_h
+        w0 = (0, actual_map_w / 2)
+        w1 = (actual_map_w / 2, actual_map_w)
+        h0 = (0, actual_map_h / 2)
+        h1 = (actual_map_h / 2, actual_map_h)
+        self.q00 = (h0, w0)
+        self.q01 = (h0, w1)
+        self.q10 = (h1, w0)
+        self.q11 = (h1, w1)
+        # * means it's a dangerous choice, will make pacman go for the power pellet later in these situations
+        self.quadrant_mapping = {
+            lambda g_x, g_y, p_x, p_y: g_x < p_x and g_y < p_y:
+                [
+                    [self.q01, self.q10, self.q11],
+                    [self.q11],
+                    [self.q11],
+                    [self.q00, self.q01, self.q10],  # *
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x == p_x and g_y < p_y:
+                [
+                    [self.q10],
+                    [self.q11],
+                    [self.q11],
+                    [self.q10],
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x > p_x and g_y < p_y:
+                [
+                    [self.q10],
+                    [self.q00, self.q10, self.q11],
+                    [self.q00, self.q01, self.q11],
+                    [self.q10],
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x < p_x and g_y == p_y:
+                [
+                    [self.q01],
+                    [self.q11],
+                    [self.q11],
+                    [self.q01],
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x > p_x and g_y == p_y:
+                [
+                    [self.q10],
+                    [self.q00],
+                    [self.q00],
+                    [self.q10],
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x < p_x and g_y > p_y:
+                [
+                    [self.q01],
+                    [self.q00, self.q10, self.q11],  # *
+                    [self.q00, self.q01, self.q11],
+                    [self.q01],
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x == p_x and g_y > p_y:
+                [
+                    [self.q01],  # *
+                    [self.q00],  # *
+                    [self.q00],
+                    [self.q01],
+                ],
+            lambda g_x, g_y, p_x, p_y: g_x > p_x and g_y > p_y:
+                [
+                    [self.q01, self.q10, self.q11],  # *
+                    [self.q00],
+                    [self.q00],
+                    [self.q00, self.q01, self.q10],
+                ],
+        }
 
     def SetMapTile(self, (row, col), newValue):
         self.map[(row * self.lvlWidth) + col] = newValue
@@ -1222,6 +1299,9 @@ class level():
                 else:
                     path.set_type((row, col), 0)
 
+        # Calculate the quadrants after level is loaded
+        self.calculate_quadrants_ranges()
+
         # do all the level-starting stuff
         self.Restart()
 
@@ -1261,28 +1341,49 @@ class level():
             player.anim_current = player.anim_stopped
             player.animFrame = 3
 
-    def get_quadrant(self, x, y):
+    def get_quadrant(self, ghost_x, ghost_y, player_x, player_y):
+        actual_ghost_pos_x = ghost_x - self.pad_w
+        actual_ghost_pos_y = ghost_y - self.pad_h
+        actual_player_pos_x = player_x - self.pad_w
+        actual_player_pos_y = player_y - self.pad_h
+
         actual_map_w = self.lvlWidth - self.pad_w
         actual_map_h = self.lvlHeight - self.pad_h
-        actual_pos_w = x - self.pad_w
-        actual_pos_h = y - self.pad_h
+        w0 = (0, actual_map_w / 2)
+        w1 = (actual_map_w / 2, actual_map_w)
+        h0 = (0, actual_map_h / 2)
+        h1 = (actual_map_h / 2, actual_map_h)
+        in_c0 = w0[0] < actual_ghost_pos_x <= w0[1]
+        in_c1 = w1[0] <= actual_ghost_pos_x < w1[1]
+        in_l0 = h0[0] < actual_ghost_pos_y <= h0[1]
+        in_l1 = h1[0] <= actual_ghost_pos_y < h1[1]
 
-        q0w = (0, actual_map_w / 2)
-        q1w = (actual_map_w / 2, actual_map_w)
-        q0h = (0, actual_map_h / 2)
-        q1h = (actual_map_h / 2, actual_map_h)
-
-        print actual_pos_w, actual_pos_h
-        in_c0 = q0w[0] < actual_pos_w <= q0w[1]
-        in_c1 = q1w[0] <= actual_pos_w < q1w[1]
-        in_l0 = q0h[0] < actual_pos_h <= q0h[1]
-        in_l1 = q1h[0] <= actual_pos_h < q1h[1]
-
-        q00 = in_c0 and in_l0
-        q01 = in_c1 and in_l0
-        q10 = in_c0 and in_l1
-        q11 = in_c1 and in_l1
-        # random.randint(1, self.lvlHeight - 2)
+        for lambda_check, quadrants_mapping in self.quadrant_mapping.items():
+            if lambda_check(actual_ghost_pos_x, actual_ghost_pos_y, actual_player_pos_x, actual_player_pos_y):
+                if in_c0 and in_l0:
+                    possible_quadrants = quadrants_mapping[0]
+                elif in_c1 and in_l0:
+                    possible_quadrants = quadrants_mapping[1]
+                elif in_c0 and in_l1:
+                    possible_quadrants = quadrants_mapping[2]
+                else:  # vai ser "in_c1 and in_l1":
+                    possible_quadrants = quadrants_mapping[3]
+                print 'player at : %sx%s' % (actual_player_pos_x, actual_player_pos_y)
+                print 'ghost at : %sx%s' % (actual_ghost_pos_x, actual_ghost_pos_y)
+                print 'we can go to: ' + str(possible_quadrants)
+                go_to_quadrant = random.choice(possible_quadrants)
+                print '\tbut we will go to: ' + str(go_to_quadrant)
+                (go_to_row, go_to_col) = (0, 0)
+                count = 1024
+                while not thisLevel.GetMapTile((go_to_row, go_to_col)) == tileID['pellet'] or (go_to_row, go_to_col) == (0, 0):
+                    if count == 0:
+                        break
+                    count -= 1
+                    go_to_row = random.randint(go_to_quadrant[0][0] + self.pad_w, go_to_quadrant[0][1] + self.pad_w)
+                    go_to_col = random.randint(go_to_quadrant[1][0] + self.pad_h, go_to_quadrant[1][1] + self.pad_h)
+                if count == 0:
+                    print 'nao achei nada'
+                print '\t\tmore specifically, %dx%d' % (go_to_row, go_to_col)
 
     def go_to_quadrant(self, n, m):
         pass
