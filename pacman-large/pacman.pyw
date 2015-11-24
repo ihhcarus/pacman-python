@@ -16,7 +16,7 @@
 # Modified by Andy Sommerville, 11 October 2007:
 # - Mom's eyes aren't what they used to be, so I'm switching 16x16 tiles to 24x24
 #   Added constants TILE_WIDTH,TILE_HEIGHT to make this easier to change later.
-
+from math import sqrt
 import pygame, sys, os, random
 from pygame.locals import *
 
@@ -242,7 +242,7 @@ class game():
 
         if self.mode == 3:
             if thisGame.lives == -1:
-                #screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
+                # screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
                 screen.blit(self.imGameOver, (0, 0))
         elif self.mode == 4:
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 30, self.screenSize[1] / 2 + 12))
@@ -531,7 +531,6 @@ class ghost():
         if thisGame.mode == 3:
             return False
 
-
         # ghost eyes --
         for y in range(6, 12, 1):
             for x in [5, 6, 8, 9]:
@@ -780,6 +779,12 @@ class PacMan:
 
         thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
         for i in range(0, len(ghosts)):
+            if i == 0:
+                dist = sqrt(pow(player.x - ghosts[i].x, 2) + pow(player.y - ghosts[i].y, 2))
+                if dist < 100:
+                    player.vel_x = 0
+                    player.vel_y = 0
+                    thisLevel.get_quadrant(ghosts[i].nearest_col, ghosts[i].nearest_row)
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
                     # ghost is normal, pacman dies
@@ -798,14 +803,14 @@ class PacMan:
                     # set game mode to brief pause after eating
                     thisGame.SetMode(5)
 
-        # decrease ghost vulnerable timer
-#         if thisGame.ghostTimer > 0:
-#             thisGame.ghostTimer -= 1
-#             if thisGame.ghostTimer == 0:
-#                 for i in range(0, 4, 1):
-#                     if ghosts[i].state == 2:
-#                         ghosts[i].state = 1
-#                 self.ghostValue = 0
+                    # decrease ghost vulnerable timer
+                    #         if thisGame.ghostTimer > 0:
+                    #             thisGame.ghostTimer -= 1
+                    #             if thisGame.ghostTimer == 0:
+                    #                 for i in range(0, 4, 1):
+                    #                     if ghosts[i].state == 2:
+                    #                         ghosts[i].state = 1
+                    #                 self.ghostValue = 0
 
         if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
             # if the ghost is lined up with the grid again meaning, it's time to go to the next path item
@@ -871,6 +876,8 @@ class level():
     def __init__(self):
         self.lvlWidth = 0
         self.lvlHeight = 0
+        self.pad_w = 0
+        self.pad_h = 0
         self.edgeLightColor = (255, 255, 0, 255)
         self.edgeShadowColor = (255, 150, 0, 255)
         self.fillColor = (0, 255, 255, 255)
@@ -907,7 +914,6 @@ class level():
         else:
             return False
 
-
     def CheckIfHitWall(self, (possiblePlayerX, possiblePlayerY), (row, col)):
 
         numCollisions = 0
@@ -926,14 +932,12 @@ class level():
         else:
             return False
 
-
     def CheckIfHit(self, (playerX, playerY), (x, y), cushion):
 
         if (playerX - x < cushion) and (playerX - x > -cushion) and (playerY - y < cushion) and (playerY - y > -cushion):
             return True
         else:
             return False
-
 
     def CheckIfHitSomething(self, (playerX, playerY), (row, col)):
 
@@ -1125,6 +1129,11 @@ class level():
                 elif firstWord == "lvlheight":
                     self.lvlHeight = int(str_splitBySpace[2])
 
+                elif firstWord == "padw":
+                    self.pad_w = int(str_splitBySpace[2])
+                elif firstWord == "padh":
+                    self.pad_h = int(str_splitBySpace[2])
+
                 elif firstWord == "edgecolor":
                     # edge color keyword for backwards compatibility (single edge color) mazes
                     red = int(str_splitBySpace[2])
@@ -1170,7 +1179,6 @@ class level():
             else:
                 useLine = True
 
-
             # this is a map data line
             if useLine == True:
 
@@ -1199,7 +1207,6 @@ class level():
                             self.pellets += 1
 
                     rowNum += 1
-
 
         # reload all tiles and set appropriate colors
         GetCrossRef()
@@ -1253,6 +1260,32 @@ class level():
             player.anim_current = player.anim_stopped
             player.animFrame = 3
 
+    def get_quadrant(self, x, y):
+        actual_map_w = self.lvlWidth - self.pad_w
+        actual_map_h = self.lvlHeight - self.pad_h
+        actual_pos_w = x - self.pad_w
+        actual_pos_h = y - self.pad_h
+
+        q0w = (0, actual_map_w / 2)
+        q1w = (actual_map_w / 2, actual_map_w)
+        q0h = (0, actual_map_h / 2)
+        q1h = (actual_map_h / 2, actual_map_h)
+
+        print actual_pos_w, actual_pos_h
+        in_c0 = q0w[0] < actual_pos_w <= q0w[1]
+        in_c1 = q1w[0] <= actual_pos_w < q1w[1]
+        in_l0 = q0h[0] < actual_pos_h <= q0h[1]
+        in_l1 = q1h[0] <= actual_pos_h < q1h[1]
+
+        q00 = in_c0 and in_l0
+        q01 = in_c1 and in_l0
+        q10 = in_c0 and in_l1
+        q11 = in_c1 and in_l1
+        # random.randint(1, self.lvlHeight - 2)
+
+    def go_to_quadrant(self, n, m):
+        pass
+
 
 def CheckIfCloseButton(events):
     for event in events:
@@ -1263,7 +1296,7 @@ def CheckIfCloseButton(events):
 def CheckInputs1():
     if thisGame.mode == 1:
         for ghost, keys in ghosts_keys.items():
-            if ghost.state != 3:
+            if ghost.state != 3:  # Can't move manually if the ghost is returning to the box
                 if pygame.key.get_pressed()[keys[0]] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
                     if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = ghost.speed
