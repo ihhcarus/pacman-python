@@ -788,6 +788,7 @@ class PacMan:
                     # ghost is vulnerable, ghost dies
                     thisGame.AddToScore(thisGame.ghostValue)
                     thisGame.ghostValue = thisGame.ghostValue * 2
+                    snd_eatgh.play()
                     ghosts[i].state = 3
                     ghosts[i].speed = ghosts[i].speed * 4
                     # and send them to the ghost box
