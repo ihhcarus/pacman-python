@@ -565,7 +565,6 @@ class ghost():
         if self.state == 1:
             # draw regular ghost (this one)
             screen.blit(self.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-            snd_eyes.stop()
         elif self.state == 2:
             # draw vulnerable ghost
             if thisGame.ghostTimer > 100:
@@ -619,6 +618,7 @@ class ghost():
                 else:
                     self.speed /= 4
                     self.state = 1
+                    snd_eyes.stop()
 
     def FollowNextPathWay(self):
         # only follow this pathway if there is a possible path found!
@@ -804,7 +804,7 @@ class PacMan:
                     ghosts[i].speed = ghosts[i].speed * 4
 
                     snd_eyes.stop()
-                    snd_eyes.play(999)
+                    snd_eyes.play(-1)
 
                     # and send them to the ghost box
                     ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
