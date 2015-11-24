@@ -80,6 +80,8 @@ snd_eatgh = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatgh
 snd_fruitbounce = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
 snd_eatfruit = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
 snd_extralife = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "extralife.wav"))
+snd_killpac = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "killpac.wav"))
+snd_ready = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ready.wav"))
 
 ghostcolor = {}
 ghostcolor[0] = (255, 0, 0, 255)
@@ -576,6 +578,7 @@ class ghost():
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+            snd_extralife.play()
 
         if thisGame.mode == 6 or thisGame.mode == 7:
             # don't animate ghost if the level is complete
@@ -788,6 +791,7 @@ class PacMan:
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
                     # ghost is normal, pacman dies
+                    snd_killpac.play()
                     thisGame.SetMode(2)
                 elif ghosts[i].state == 2:
                     # ghost is vulnerable, ghost dies
@@ -1418,6 +1422,7 @@ def CheckInputs1():
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
             thisGame.StartNewGame()
+            snd_ready.play()
     if pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
         sys.exit(0)
 
