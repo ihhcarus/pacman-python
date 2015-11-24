@@ -82,6 +82,8 @@ snd_eatfruit = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ea
 snd_extralife = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "extralife.wav"))
 snd_killpac = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "killpac.wav"))
 snd_ready = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ready.wav"))
+snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.wav"))
+snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
 
 ghostcolor = {}
 ghostcolor[0] = (255, 0, 0, 255)
@@ -578,7 +580,7 @@ class ghost():
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-            snd_extralife.play()
+            # snd_eyes.play() ### ARRUMAR
 
         if thisGame.mode == 6 or thisGame.mode == 7:
             # don't animate ghost if the level is complete
