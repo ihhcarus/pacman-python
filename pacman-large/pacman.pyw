@@ -619,6 +619,9 @@ class ghost():
                 else:
                     self.speed /= 4
                     self.state = 1
+                    for i in range(0, len(ghosts)):
+                        if ghosts[i].state == 3:
+                            return
                     snd_eyes.stop()
 
     def FollowNextPathWay(self):
@@ -806,6 +809,7 @@ class PacMan:
                     print 'mati'
                     print self.currentPath
                     snd_killpac.play()
+                    snd_eyes.stop()
                     thisGame.SetMode(2)
                 elif ghosts[i].state == 2:
                     # ghost is vulnerable, ghost dies
