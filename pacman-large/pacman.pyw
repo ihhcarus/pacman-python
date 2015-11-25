@@ -362,6 +362,7 @@ class PathFinder:
         self.set_f(self.start, 0)
 
         do_continue = True
+        this_lowest_f_node = False
         while do_continue:
             this_lowest_f_node = self.get_lowest_f_node()
             if not this_lowest_f_node == self.end and this_lowest_f_node:
@@ -383,8 +384,8 @@ class PathFinder:
             else:
                 do_continue = False
 
-        if this_lowest_f_node == False:
-            return False
+        if not this_lowest_f_node:
+            return ""
 
         # reconstruct path
         self.current = self.end
@@ -569,14 +570,14 @@ class ghost():
             # draw vulnerable ghost
             if thisGame.ghostTimer > 100:
                 # blue
-                screen.blit(ghosts[4].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                screen.blit(ghosts[VULNERABLE_GHOST].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
             else:
                 # blue/white flashing
                 tempTimerI = int(thisGame.ghostTimer / 10)
                 if tempTimerI == 1 or tempTimerI == 3 or tempTimerI == 5 or tempTimerI == 7 or tempTimerI == 9:
-                    screen.blit(ghosts[5].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(ghosts[FLASHING_GHOST].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
-                    screen.blit(ghosts[4].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(ghosts[VULNERABLE_GHOST].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
@@ -776,6 +777,8 @@ class PacMan:
 
         self.pellet_snd_num = 0  # ?
 
+        self.last_dist = None
+
     def move(self):
         self.x += self.vel_x
         self.y += self.vel_y
@@ -784,15 +787,24 @@ class PacMan:
 
         thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
         for i in range(0, len(ghosts)):
-            if i == 0:
-                # player_ = player
-                player_ = ghosts[i + 1]
-                dist = sqrt(pow(player_.x - ghosts[i].x, 2) + pow(player_.y - ghosts[i].y, 2))
-                if dist < 100:
-                    thisLevel.get_quadrant(ghosts[i].nearest_col, ghosts[i].nearest_row, player_.nearest_col, player_.nearest_row)
+            ghost = ghosts[i]
+            dist = sqrt(pow(self.x - ghost.x, 2) + pow(self.y - ghost.y, 2))
+            if dist < 200:
+                if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
+                    thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
+
+            # if self.last_dist:
+            #     if dist < self.last_dist:
+            #         thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
+            # else:  # first time
+            #     self.last_dist = dist
+            #     thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
+
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
                     # ghost is normal, pacman dies
+                    print 'mati'
+                    print self.currentPath
                     snd_killpac.play()
                     thisGame.SetMode(2)
                 elif ghosts[i].state == 2:
@@ -818,13 +830,13 @@ class PacMan:
                     #         if thisGame.ghostTimer > 0:
                     #             thisGame.ghostTimer -= 1
                     #             if thisGame.ghostTimer == 0:
-                    #                 for i in range(0, 4, 1):
+                    #                 for i in range(0, GHOSTS_QTY, 1):
                     #                     if ghosts[i].state == 2:
                     #                         ghosts[i].state = 1
                     #                 self.ghostValue = 0
 
         if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
-            # if the ghost is lined up with the grid again meaning, it's time to go to the next path item
+            # pacman is lined up with the grid again, meaning it's time to go to the next path item
             if len(self.currentPath) > 0:
                 self.currentPath = self.currentPath[1:]
             else:
@@ -843,6 +855,19 @@ class PacMan:
             elif self.currentPath[0] == "D":
                 (self.vel_x, self.vel_y) = (0, self.speed)
         else:
+            self.vel_x = 0
+            self.vel_y = 0
+            # hack absurdo, remover
+            # if self.last_dist == None:
+            #     (rand_row, rand_col) = (0, 0)
+            #     while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
+            #         rand_row = random.randint(1, thisLevel.lvlHeight - 2)
+            #         rand_col = random.randint(1, thisLevel.lvlWidth - 2)
+            #     self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (rand_row, rand_col))
+            #     self.FollowNextPathWay()
+            # else:
+            #     return
+            return
             (rand_row, rand_col) = (0, 0)
             pellets = [tileID['pellet'], tileID['pellet-power']]
             # before sending pacman to a random pellet, check if there is no pellets around him
@@ -908,10 +933,10 @@ class level():
     def calculate_quadrants_ranges(self):
         actual_map_w = self.lvlWidth - self.pad_w
         actual_map_h = self.lvlHeight - self.pad_h
-        w0 = (0, actual_map_w / 2)
-        w1 = (actual_map_w / 2, actual_map_w)
-        h0 = (0, actual_map_h / 2)
-        h1 = (actual_map_h / 2, actual_map_h)
+        w0 = (self.pad_w, (actual_map_w / 2) + self.pad_w)
+        w1 = ((actual_map_w / 2) + self.pad_w, self.lvlWidth)
+        h0 = (self.pad_h, (actual_map_h / 2) + self.pad_h)
+        h1 = ((actual_map_h / 2) + self.pad_h, self.lvlHeight)
         self.q00 = (w0, h0)
         self.q01 = (w1, h0)
         self.q10 = (w0, h1)
@@ -979,10 +1004,12 @@ class level():
     def SetMapTile(self, (row, col), newValue):
         self.map[(row * self.lvlWidth) + col] = newValue
 
-    def GetMapTile(self, (row, col)):
+    def GetMapTile(self, (row, col), printed=False):
         if row >= 0 and row < self.lvlHeight and col >= 0 and col < self.lvlWidth:
             return self.map[(row * self.lvlWidth) + col]
         else:
+            if printed:
+                print row, col, self.lvlHeight, self.lvlWidth
             return 0
 
     def IsWall(self, (row, col)):
@@ -1062,7 +1089,7 @@ class level():
                         thisGame.ghostValue = 200
 
                         thisGame.ghostTimer = 360
-                        for i in range(0, 4, 1):
+                        for i in range(0, GHOSTS_QTY, 1):
                             if ghosts[i].state == 1:
                                 ghosts[i].state = 2
 
@@ -1284,10 +1311,12 @@ class level():
 
                         elif thisID >= 10 and thisID <= 13:
                             # one of the ghosts
-
-                            ghosts[thisID - 10].homeX = k * TILE_WIDTH
-                            ghosts[thisID - 10].homeY = rowNum * TILE_HEIGHT
-                            self.SetMapTile((rowNum, k), 0)
+                            try:
+                                ghosts[thisID - 10].homeX = k * TILE_WIDTH
+                                ghosts[thisID - 10].homeY = rowNum * TILE_HEIGHT
+                                self.SetMapTile((rowNum, k), 0)
+                            except:
+                                pass
 
                         elif thisID == 2:
                             # pellet
@@ -1317,7 +1346,7 @@ class level():
 
     def Restart(self):
 
-        for i in range(0, 4, 1):
+        for i in range(0, GHOSTS_QTY, 1):
             # move ghosts back to home
 
             ghosts[i].x = ghosts[i].homeX
@@ -1359,42 +1388,54 @@ class level():
 
         actual_map_w = self.lvlWidth - self.pad_w
         actual_map_h = self.lvlHeight - self.pad_h
-        w0 = (0, actual_map_w / 2)
-        w1 = (actual_map_w / 2, actual_map_w)
-        h0 = (0, actual_map_h / 2)
-        h1 = (actual_map_h / 2, actual_map_h)
-        in_c0 = w0[0] < actual_ghost_pos_x <= w0[1]
-        in_c1 = w1[0] <= actual_ghost_pos_x < w1[1]
-        in_l0 = h0[0] < actual_ghost_pos_y <= h0[1]
-        in_l1 = h1[0] <= actual_ghost_pos_y < h1[1]
+        w0 = (self.pad_w, (actual_map_w / 2) + self.pad_w)
+        w1 = ((actual_map_w / 2) + self.pad_w, self.lvlWidth)
+        h0 = (self.pad_h, (actual_map_h / 2) + self.pad_h)
+        h1 = ((actual_map_h / 2) + self.pad_h, self.lvlHeight)
+        in_c0 = w0[0] < ghost_x <= w0[1]
+        in_c1 = w1[0] <= ghost_x < w1[1]
+        in_l0 = h0[0] < ghost_y <= h0[1]
+        in_l1 = h1[0] <= ghost_y < h1[1]
 
+        # if player.vel_x == 0 and player.vel_y == 0:
         for lambda_check, quadrants_mapping in self.quadrant_mapping.items():
             if lambda_check(actual_ghost_pos_x, actual_ghost_pos_y, actual_player_pos_x, actual_player_pos_y):
                 if in_c0 and in_l0:
+                    we_at = "in_c0 and in_l0"
                     possible_quadrants = quadrants_mapping[0]
                 elif in_c1 and in_l0:
+                    we_at = "in_c1 and in_l0"
                     possible_quadrants = quadrants_mapping[1]
                 elif in_c0 and in_l1:
+                    we_at = "in_c0 and in_l1"
                     possible_quadrants = quadrants_mapping[2]
                 else:  # condition: "in_c1 and in_l1":
+                    we_at = "in_c1 and in_l1"
                     possible_quadrants = quadrants_mapping[3]
-                print 'player at : %sx%s' % (actual_player_pos_x, actual_player_pos_y)
-                print 'ghost at : %sx%s' % (actual_ghost_pos_x, actual_ghost_pos_y)
-                print '\twe can go to: ' + str(possible_quadrants)
+                print '-+player at %sx%s, ghost at %sx%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
+                print ' |-+we can go to: ' + str(possible_quadrants)
                 go_to_quadrant = random.choice(possible_quadrants)
-                print '\t\tbut we will go to: %s with %s' % (str(go_to_quadrant), str((self.pad_w, self.pad_h)))
+                print '   |-+but we will go to: %s with padding %s' % (str(go_to_quadrant), str((self.pad_h, self.pad_w)))
                 (go_to_row, go_to_col) = (0, 0)
                 count = 1024
-                while not thisLevel.GetMapTile((go_to_row, go_to_col)) == tileID['pellet'] or (go_to_row, go_to_col) == (0, 0):
+                while not thisLevel.GetMapTile((go_to_row, go_to_col)) == tileID['pellet'] or thisLevel.GetMapTile((go_to_row, go_to_col)) == 0 or (go_to_row, go_to_col) == (0, 0):
                     if count == 0:
                         break
                     count -= 1
-                    go_to_row = random.randint(go_to_quadrant[0][0] + self.pad_w, go_to_quadrant[0][1] + self.pad_w)
-                    go_to_col = random.randint(go_to_quadrant[1][0] + self.pad_h, go_to_quadrant[1][1] + self.pad_h)
+                    # lvlwidth 37 padw 16             16 ou 26           26 ou 37
+                    go_to_col = random.randint(go_to_quadrant[0][0], go_to_quadrant[0][1])
+                    # lvlheight 28 padh 4             4 ou 16            16 ou 28
+                    go_to_row = random.randint(go_to_quadrant[1][0], go_to_quadrant[1][1])
                 if count == 0:
-                    print '\t\t\tnao achei nada'
+                    print '     |-+nao achei nada'
                 else:
-                    print '\t\t\tmore specifically, %dx%d' % (go_to_row, go_to_col)
+                    print '     |-+more specifically, %dx%d from %dx%d' % (go_to_col, go_to_row, player.nearest_col, player.nearest_row)
+                    next_path = path.find_path((player.nearest_row, player.nearest_col), (go_to_row + self.pad_h, go_to_col + self.pad_w))
+                    if next_path:
+                        player.currentPath = next_path[0] + next_path
+                        print '       |-+with path: %s' % next_path
+                    else:
+                        print '       |-+but cant get there...'
 
     def go_to_quadrant(self, n, m):
         pass
@@ -1499,17 +1540,21 @@ players = [player1]
 path = PathFinder()
 
 # create ghost objects
+VULNERABLE_GHOST = 2
+FLASHING_GHOST = 3
+GHOSTS_QTY = 1
+
 first_ghost = ghost(0)
 second_ghost = ghost(1)
 third_ghost = ghost(2)
 fourth_ghost = ghost(3)
 ghosts_keys = {
     first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
-    second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
-    third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
-    fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
+    # second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
+    # third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
+    # fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
 }
-ghosts = ghosts_keys.keys() + [ghost(4), ghost(5)]
+ghosts = ghosts_keys.keys() + [ghost(3), ghost(4)]
 
 # create piece of fruit
 thisFruit = fruit()
@@ -1546,7 +1591,7 @@ while True:
         thisGame.modeTimer += 1
         for player in players:
             player.move()
-        for i in range(0, 4, 1):
+        for i in range(0, GHOSTS_QTY, 1):
             ghosts[i].Move()
         thisFruit.Move()
 
@@ -1575,8 +1620,7 @@ while True:
 
         if thisGame.modeTimer == 90:
             thisGame.SetMode(1)
-            for player in players:
-                player.vel_x = player.speed
+            # player.vel_x = -player.speed
 
     elif thisGame.mode == 5:
         # brief pause after munching a vulnerable ghost
@@ -1634,7 +1678,7 @@ while True:
             if thisGame.modeTimer % 2 == 0:
                 thisGame.DrawNumber(2500, (thisFruit.x - thisGame.screenPixelPos[0] - 16, thisFruit.y - thisGame.screenPixelPos[1] + 4))
 
-        for i in range(0, 4, 1):
+        for i in range(0, GHOSTS_QTY, 1):
             ghosts[i].Draw()
         thisFruit.Draw()
         for player in players:
