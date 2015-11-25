@@ -902,10 +902,10 @@ class level():
         w1 = (actual_map_w / 2, actual_map_w)
         h0 = (0, actual_map_h / 2)
         h1 = (actual_map_h / 2, actual_map_h)
-        self.q00 = (h0, w0)
-        self.q01 = (h0, w1)
-        self.q10 = (h1, w0)
-        self.q11 = (h1, w1)
+        self.q00 = (w0, h0)
+        self.q01 = (w1, h0)
+        self.q10 = (w0, h1)
+        self.q11 = (w1, h1)
         # * means it's a dangerous choice, will make pacman go for the power pellet later in these situations
         self.quadrant_mapping = {
             lambda g_x, g_y, p_x, p_y: g_x < p_x and g_y < p_y:
@@ -1366,13 +1366,13 @@ class level():
                     possible_quadrants = quadrants_mapping[1]
                 elif in_c0 and in_l1:
                     possible_quadrants = quadrants_mapping[2]
-                else:  # vai ser "in_c1 and in_l1":
+                else:  # condition: "in_c1 and in_l1":
                     possible_quadrants = quadrants_mapping[3]
                 print 'player at : %sx%s' % (actual_player_pos_x, actual_player_pos_y)
                 print 'ghost at : %sx%s' % (actual_ghost_pos_x, actual_ghost_pos_y)
-                print 'we can go to: ' + str(possible_quadrants)
+                print '\twe can go to: ' + str(possible_quadrants)
                 go_to_quadrant = random.choice(possible_quadrants)
-                print '\tbut we will go to: ' + str(go_to_quadrant)
+                print '\t\tbut we will go to: %s with %s' % (str(go_to_quadrant), str((self.pad_w, self.pad_h)))
                 (go_to_row, go_to_col) = (0, 0)
                 count = 1024
                 while not thisLevel.GetMapTile((go_to_row, go_to_col)) == tileID['pellet'] or (go_to_row, go_to_col) == (0, 0):
@@ -1382,8 +1382,9 @@ class level():
                     go_to_row = random.randint(go_to_quadrant[0][0] + self.pad_w, go_to_quadrant[0][1] + self.pad_w)
                     go_to_col = random.randint(go_to_quadrant[1][0] + self.pad_h, go_to_quadrant[1][1] + self.pad_h)
                 if count == 0:
-                    print 'nao achei nada'
-                print '\t\tmore specifically, %dx%d' % (go_to_row, go_to_col)
+                    print '\t\t\tnao achei nada'
+                else:
+                    print '\t\t\tmore specifically, %dx%d' % (go_to_row, go_to_col)
 
     def go_to_quadrant(self, n, m):
         pass
