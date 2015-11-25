@@ -80,6 +80,10 @@ snd_eatgh = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatgh
 snd_fruitbounce = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
 snd_eatfruit = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
 snd_extralife = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "extralife.wav"))
+snd_killpac = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "killpac.wav"))
+snd_ready = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ready.wav"))
+snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.wav"))
+snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
 
 ghostcolor = {}
 ghostcolor[0] = (255, 0, 0, 255)
@@ -614,6 +618,7 @@ class ghost():
                 else:
                     self.speed /= 4
                     self.state = 1
+                    snd_eyes.stop()
 
     def FollowNextPathWay(self):
         # only follow this pathway if there is a possible path found!
@@ -788,6 +793,7 @@ class PacMan:
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
                     # ghost is normal, pacman dies
+                    snd_killpac.play()
                     thisGame.SetMode(2)
                 elif ghosts[i].state == 2:
                     # ghost is vulnerable, ghost dies
@@ -796,6 +802,10 @@ class PacMan:
                     snd_eatgh.play()
                     ghosts[i].state = 3
                     ghosts[i].speed = ghosts[i].speed * 4
+
+                    snd_eyes.stop()
+                    snd_eyes.play(-1)
+
                     # and send them to the ghost box
                     ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
                     ghosts[i].y = ghosts[i].nearest_row * TILE_HEIGHT
@@ -1419,6 +1429,7 @@ def CheckInputs1():
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
             thisGame.StartNewGame()
+            snd_ready.play()
     if pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
         sys.exit(0)
 
