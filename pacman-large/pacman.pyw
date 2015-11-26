@@ -792,10 +792,9 @@ class PacMan:
         for i in range(0, len(ghosts)):
             ghost = ghosts[i]
             dist = sqrt(pow(self.x - ghost.x, 2) + pow(self.y - ghost.y, 2))
-            if dist < 200:
+            if dist < 100:
                 if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
                     thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
-
             # if self.last_dist:
             #     if dist < self.last_dist:
             #         thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
@@ -862,16 +861,16 @@ class PacMan:
             self.vel_x = 0
             self.vel_y = 0
             # hack absurdo, remover
-            # if self.last_dist == None:
-            #     (rand_row, rand_col) = (0, 0)
-            #     while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
-            #         rand_row = random.randint(1, thisLevel.lvlHeight - 2)
-            #         rand_col = random.randint(1, thisLevel.lvlWidth - 2)
-            #     self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (rand_row, rand_col))
-            #     self.FollowNextPathWay()
-            # else:
-            #     return
-            return
+            #if self.last_dist == None:
+            #    (rand_row, rand_col) = (0, 0)
+            #    while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
+            #        rand_row = random.randint(1, thisLevel.lvlHeight - 2)
+            #        rand_col = random.randint(1, thisLevel.lvlWidth - 2)
+            #    self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (rand_row, rand_col))
+            #    self.FollowNextPathWay()
+            #else:
+            #    return
+            #return
             (rand_row, rand_col) = (0, 0)
             pellets = [tileID['pellet'], tileID['pellet-power']]
             # before sending pacman to a random pellet, check if there is no pellets around him
@@ -1416,7 +1415,7 @@ class level():
                 else:  # condition: "in_c1 and in_l1":
                     we_at = "in_c1 and in_l1"
                     possible_quadrants = quadrants_mapping[3]
-                print '-+player at %sx%s, ghost at %sx%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
+                print '-+player at Y:%sxX:%s, ghost at Y:%sxX:%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
                 print ' |-+we can go to: ' + str(possible_quadrants)
                 go_to_quadrant = random.choice(possible_quadrants)
                 print '   |-+but we will go to: %s with padding %s' % (str(go_to_quadrant), str((self.pad_h, self.pad_w)))
@@ -1433,7 +1432,7 @@ class level():
                 if count == 0:
                     print '     |-+nao achei nada'
                 else:
-                    print '     |-+more specifically, %dx%d from %dx%d' % (go_to_col, go_to_row, player.nearest_col, player.nearest_row)
+                    print '     |-+more specifically, col%dxrow%d from col%dxrow%d' % (go_to_col, go_to_row, player.nearest_col, player.nearest_row)
                     next_path = path.find_path((player.nearest_row, player.nearest_col), (go_to_row + self.pad_h, go_to_col + self.pad_w))
                     if next_path:
                         player.currentPath = next_path[0] + next_path
