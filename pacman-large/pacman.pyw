@@ -798,7 +798,7 @@ class PacMan:
             ghost = ghosts[i]
             dist = sqrt(pow(self.x - ghost.x, 2) + pow(self.y - ghost.y, 2))
             # if we get to close to ghosts, use a power pellet to smash them >:D
-            if dist < 15 and ghost.state != 2:
+            if dist < 15 and ghost.state == 1:
                 if self.power_pellets:
                     self.power_pellets -= 1
                     pygame.mixer.stop()
