@@ -246,7 +246,7 @@ class game():
         screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
 
         if self.mode == 3:
-            if thisGame.lives == -1:
+            # if thisGame.lives == -1:
                 # screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
                 screen.blit(self.imGameOver, (0, 0))
         elif self.mode == 4:
@@ -1074,7 +1074,8 @@ class level():
                         if thisLevel.pellets == 0:
                             # no more pellets left!
                             # WON THE LEVEL
-                            thisGame.SetMode(6)
+                            # thisGame.SetMode(6)
+                            thisGame.SetMode(3)
 
                     elif result == tileID['pellet-power']:
                         # pacman got a power pellet, store it to use later
@@ -1353,6 +1354,8 @@ class level():
             player.anim_current = player.anim_stopped
             player.animFrame = 3
 
+            player.power_pellets = 0
+
     def get_quadrant(self, ghost_x, ghost_y, player_x, player_y):
         actual_ghost_pos_x = ghost_x - self.pad_w
         actual_ghost_pos_y = ghost_y - self.pad_h
@@ -1384,10 +1387,10 @@ class level():
                 else:  # condition: "in_c1 and in_l1":
                     we_at = "in_c1 and in_l1"
                     possible_quadrants = quadrants_mapping[3]
-                print '-+player at Y:%sxX:%s, ghost at Y:%sxX:%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
-                print ' |-+we can go to: ' + str(possible_quadrants)
+                # print '-+player at Y:%sxX:%s, ghost at Y:%sxX:%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
+                # print ' |-+we can go to: ' + str(possible_quadrants)
                 go_to_quadrant = random.choice(possible_quadrants)
-                print '   |-+but we will go to: %s with padding %s' % (str(go_to_quadrant), str((self.pad_h, self.pad_w)))
+                # print '   |-+but we will go to: %s with padding %s' % (str(go_to_quadrant), str((self.pad_h, self.pad_w)))
                 (go_to_row, go_to_col) = (0, 0)
                 count = 1024
                 while not thisLevel.GetMapTile((go_to_row, go_to_col)) == tileID['pellet'] or thisLevel.GetMapTile((go_to_row, go_to_col)) == 0 or (go_to_row, go_to_col) == (0, 0):
@@ -1397,15 +1400,17 @@ class level():
                     go_to_col = random.randint(go_to_quadrant[0][0], go_to_quadrant[0][1])
                     go_to_row = random.randint(go_to_quadrant[1][0], go_to_quadrant[1][1])
                 if count == 0:
-                    print '     |-+nao achei nada'
+                    pass
+                    # print '     |-+nao achei nada'
                 else:
-                    print '     |-+more specifically, col%dxrow%d from col%dxrow%d' % (go_to_col, go_to_row, player.nearest_col, player.nearest_row)
+                    # print '     |-+more specifically, col%dxrow%d from col%dxrow%d' % (go_to_col, go_to_row, player.nearest_col, player.nearest_row)
                     next_path = path.find_path((player.nearest_row, player.nearest_col), (go_to_row + self.pad_h, go_to_col + self.pad_w))
                     if next_path:
                         player.currentPath = next_path[0] + next_path
-                        print '       |-+with path: %s' % next_path
+                        # print '       |-+with path: %s' % next_path
                     else:
-                        print '       |-+but cant get there...'
+                        pass
+                        # print '       |-+but cant get there...'
 
 
 def CheckIfCloseButton(events):
@@ -1525,11 +1530,11 @@ ghosts_controls = {
 ghosts = ghosts_controls.keys() + [ghost(4), ghost(5)]
 
 joy_count = pygame.joystick.get_count()
-print 'we have %d joystick' % joy_count
+# print 'we have %d joystick' % joy_count
 for idx, controls in enumerate(ghosts_controls.values()):
     joystick = None
     if idx < joy_count:
-        print 'created joystick %d' % idx
+        # print 'created joystick %d' % idx
         joystick = pygame.joystick.Joystick(idx)
         joystick.init()
     controls.append(joystick)
@@ -1573,7 +1578,8 @@ while True:
             thisGame.lives -= 1
             if thisGame.lives == -1:
                 thisGame.updatehiscores(thisGame.score)
-                thisGame.SetMode(3)
+                thisGame.SetMode(6)
+                # thisGame.SetMode(3)
                 thisGame.drawmidgamehiscores()
             else:
                 thisGame.SetMode(4)
