@@ -1416,29 +1416,30 @@ def CheckIfCloseButton(events):
 
 def CheckInputs1():
     if thisGame.mode == 1:
-        for ghost, keys in ghosts_keys.items():
+        for ghost, controls in ghosts_controls.items():
+            js = controls[4]
             if ghost.state != 3:  # Can't move manually if the ghost is returning to the box
-                if pygame.key.get_pressed()[keys[0]] or (js != None and js.get_axis(JS_XAXIS) > 0.5):
+                if pygame.key.get_pressed()[controls[0]] or (js and js.get_axis(JS_YAXIS) < -0.5):
                     if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = ghost.speed
                         ghost.vel_y = 0
-                elif pygame.key.get_pressed()[keys[1]] or (js != None and js.get_axis(JS_XAXIS) < -0.5):
+                elif pygame.key.get_pressed()[controls[1]] or (js and js.get_axis(JS_YAXIS) > 0.5):
                     if not (ghost.vel_x == -ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x - ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = -ghost.speed
                         ghost.vel_y = 0
-                elif pygame.key.get_pressed()[keys[2]] or (js != None and js.get_axis(JS_YAXIS) > 0.5):
+                elif pygame.key.get_pressed()[controls[2]] or (js and js.get_axis(JS_XAXIS) < -0.5):
                     if not (ghost.vel_x == 0 and ghost.vel_y == ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y + ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = 0
                         ghost.vel_y = ghost.speed
-                elif pygame.key.get_pressed()[keys[3]] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
+                elif pygame.key.get_pressed()[controls[3]] or (js and js.get_axis(JS_XAXIS) > 0.5):
                     if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = 0
                         ghost.vel_y = -ghost.speed
     elif thisGame.mode == 3:
-        if pygame.key.get_pressed()[pygame.K_RETURN] or (js != None and js.get_button(JS_STARTBUTTON)):
+        if pygame.key.get_pressed()[pygame.K_RETURN]:
             thisGame.StartNewGame()
             snd_ready.play()
-    if pygame.key.get_pressed()[pygame.K_F5] or (js != None and js.get_axis(JS_YAXIS) < -0.5):
+    if pygame.key.get_pressed()[pygame.K_F5]:
         sys.exit(0)
 
 
@@ -1515,13 +1516,23 @@ first_ghost = ghost(0)
 second_ghost = ghost(1)
 third_ghost = ghost(2)
 fourth_ghost = ghost(3)
-ghosts_keys = {
+ghosts_controls = {
     first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
     second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
     third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
     fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
 }
-ghosts = ghosts_keys.keys() + [ghost(4), ghost(5)]
+ghosts = ghosts_controls.keys() + [ghost(4), ghost(5)]
+
+joy_count = pygame.joystick.get_count()
+print 'we have %d joystick' % joy_count
+for idx, controls in enumerate(ghosts_controls.values()):
+    joystick = None
+    if idx < joy_count:
+        print 'created joystick %d' % idx
+        joystick = pygame.joystick.Joystick(idx)
+        joystick.init()
+    controls.append(joystick)
 
 # create piece of fruit
 thisFruit = fruit()
@@ -1536,16 +1547,6 @@ thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
 
 window = pygame.display.set_mode(thisGame.screenSize, pygame.FULLSCREEN)
-
-# initialise the joystick
-if pygame.joystick.get_count() > 0:
-    if JS_DEVNUM < pygame.joystick.get_count():
-        js = pygame.joystick.Joystick(JS_DEVNUM)
-    else:
-        js = pygame.joystick.Joystick(0)
-    js.init()
-else:
-    js = None
 
 while True:
 
