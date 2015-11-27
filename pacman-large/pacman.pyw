@@ -217,6 +217,10 @@ class game():
         self.imReady = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready.gif")).convert_alpha()
         self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert()
         self.imPowPel = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", "pellet-power-white.gif")).convert_alpha()
+        self.imNeg = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "-.gif")).convert_alpha()
+        self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
+        self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
+        self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
         self.imHiscores = self.makehiscorelist()
 
     def StartNewGame(self):
@@ -244,28 +248,37 @@ class game():
     def DrawScore(self):
         self.DrawNumber(self.score, (SCORE_XOFFSET, self.screenSize[1] - SCORE_YOFFSET))
 
-        for i in range(0, self.lives, 1):
-            screen.blit(self.imLife, (34 + i * 10 + 16, self.screenSize[1] - 18))
+        screen.blit(self.imScore, (250 + 56 + -120, self.screenSize[1] - 36))
+        screen.blit(self.imLives, (250 + 56 + 40, self.screenSize[1] - 36))
+        screen.blit(self.imPower, (250 + 56 + 180, self.screenSize[1] - 36))
 
-        screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
+        for i in range(0, self.lives, 1):
+            screen.blit(self.imLife, (34 + i * 15 + 16 + 297, self.screenSize[1] - 17))
+
+        # Draw fruit of this map:
+        #screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
 
         if self.mode == 3:
             if self.levelNum != 0:
-                screen.blit(self.imGameOver, (0, 0))
+                screen.blit(self.imGameOver, (-270, 0))
         elif self.mode == 4:
-            screen.blit(self.imReady, (self.screenSize[0] / 2 - 30, self.screenSize[1] / 2 + 12))
+            screen.blit(self.imReady, (self.screenSize[0] / 2 - 55, self.screenSize[1] / 2 + 12))
 
-        self.DrawNumber(self.levelNum, (0, self.screenSize[1] - 20))
+        # Show level number:
+        #self.DrawNumber(self.levelNum, (0, self.screenSize[1] - 20))
+
 
         for i in range(0, player.power_pellets):
-            screen.blit(self.imPowPel, (250 + i * 20 + 56, self.screenSize[1] - 24))
+            screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, self.screenSize[1] - 18))
 
     def DrawNumber(self, number, (x, y)):
         strNumber = str(number)
 
         for i in range(0, len(str(number)), 1):
             iDigit = int(strNumber[i])
-            screen.blit(self.digit[iDigit], (x + i * SCORE_COLWIDTH, y))
+            screen.blit(self.digit[iDigit], (x + i * SCORE_COLWIDTH + 10 + 135, y + 15))
+        if self.score > 0:
+            screen.blit(self.imNeg, (x - 4 + 135, y + 15))
 
     def SmartMoveScreen(self):
         # Comentando pra nao mover a tela automaticamente
@@ -1178,7 +1191,7 @@ class level():
                         if self.powerPelletBlinkTimer < 30:
                             screen.blit(tileIDImage[useTile], (col * TILE_WIDTH - thisGame.screenPixelOffset[0], row * TILE_HEIGHT - thisGame.screenPixelOffset[1]))
                     elif useTile == tileID['showlogo']:
-                        screen.blit(thisGame.imLogo, (0, 0))
+                        screen.blit(thisGame.imLogo, (-255, 0))
                     elif useTile == tileID['hiscores']:
                         pass
                     else:
@@ -1561,7 +1574,9 @@ thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
 
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
-pygame.display.set_mode((1280, 800), DISPLAY_MODE_FLAGS)
+
+thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
+pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)    
 
 while True:
 
