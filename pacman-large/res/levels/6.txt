@@ -1,4 +1,4 @@
-# lvlwidth 20
+# lvlwidth 21
 # lvlheight 23
 # bgcolor 0 0 0
 # edgecolor 255 128 128
