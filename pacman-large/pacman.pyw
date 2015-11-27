@@ -226,6 +226,9 @@ class game():
         self.SetMode(4)
         thisLevel.LoadLevel(thisGame.GetLevelNum())
 
+        thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
+        pygame.display.set_mode(thisGame.screenSize, pygame.FULLSCREEN)
+
     def AddToScore(self, amount):
 
         extraLifeSet = [25000, 50000, 100000, 150000]
@@ -299,6 +302,9 @@ class game():
 
         self.SetMode(4)
         thisLevel.LoadLevel(thisGame.GetLevelNum())
+
+        thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
+        pygame.display.set_mode(thisGame.screenSize, pygame.FULLSCREEN)
 
         player.vel_x = 0
         player.vel_y = 0
@@ -1550,8 +1556,7 @@ tileIDImage = {}  # gives tile image (when the ID# is known)
 thisGame = game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
-
-window = pygame.display.set_mode(thisGame.screenSize, pygame.FULLSCREEN)
+pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
 
 while True:
 
