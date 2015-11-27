@@ -16,6 +16,7 @@
 # Modified by Andy Sommerville, 11 October 2007:
 # - Mom's eyes aren't what they used to be, so I'm switching 16x16 tiles to 24x24
 #   Added constants TILE_WIDTH,TILE_HEIGHT to make this easier to change later.
+from collections import OrderedDict
 from math import sqrt
 import pygame, sys, os, random
 from pygame.locals import *
@@ -227,7 +228,7 @@ class game():
         thisLevel.LoadLevel(thisGame.GetLevelNum())
 
         thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
-        pygame.display.set_mode(thisGame.screenSize, pygame.FULLSCREEN)
+        pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
     def AddToScore(self, amount):
 
@@ -258,7 +259,6 @@ class game():
 
         for i in range(0, player.power_pellets):
             screen.blit(self.imPowPel, (250 + i * 20 + 56, self.screenSize[1] - 24))
-
 
     def DrawNumber(self, number, (x, y)):
         strNumber = str(number)
@@ -303,7 +303,7 @@ class game():
         thisLevel.LoadLevel(thisGame.GetLevelNum())
 
         thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
-        pygame.display.set_mode(thisGame.screenSize, pygame.FULLSCREEN)
+        pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
         player.vel_x = 0
         player.vel_y = 0
@@ -529,11 +529,9 @@ class ghost():
         self.anim = {}
         for i in range(1, 7, 1):
             self.anim[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "ghost " + str(i) + ".gif")).convert_alpha()
-
             # change the ghost color in this frame
             for y in range(0, TILE_HEIGHT, 1):
                 for x in range(0, TILE_WIDTH, 1):
-
                     if self.anim[i].get_at((x, y)) == (255, 0, 0, 255):
                         # default, red ghost body color
                         self.anim[i].set_at((x, y), ghostcolor[self.id])
@@ -1526,12 +1524,18 @@ first_ghost = ghost(0)
 second_ghost = ghost(1)
 third_ghost = ghost(2)
 fourth_ghost = ghost(3)
-ghosts_controls = {
+ghosts_controls = OrderedDict({
     first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
     second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
     third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
     fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
-}
+})
+# for g in ghosts_controls.keys():
+#     print g.id, ghostcolor[g.id]
+# 0 (255, 0, 0, 255)
+# 1 (255, 128, 255, 255)
+# 2 (128, 255, 255, 255)
+# 3 (255, 128, 0, 255)
 ghosts = ghosts_controls.keys() + [ghost(4), ghost(5)]
 
 joy_count = pygame.joystick.get_count()
@@ -1555,7 +1559,9 @@ tileIDImage = {}  # gives tile image (when the ID# is known)
 thisGame = game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
-pygame.display.set_mode((1280, 800), pygame.FULLSCREEN)
+
+DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
+pygame.display.set_mode((1280, 800), DISPLAY_MODE_FLAGS)
 
 while True:
 
