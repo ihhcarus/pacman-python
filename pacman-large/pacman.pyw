@@ -249,8 +249,7 @@ class game():
         screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
 
         if self.mode == 3:
-            # if thisGame.lives == -1:
-                # screen.blit(self.imGameOver, (self.screenSize[0] / 2 - 48, self.screenSize[1] / 2 - (self.imGameOver.get_height() / 2)))
+            if self.levelNum != 0:
                 screen.blit(self.imGameOver, (0, 0))
         elif self.mode == 4:
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 30, self.screenSize[1] / 2 + 12))
