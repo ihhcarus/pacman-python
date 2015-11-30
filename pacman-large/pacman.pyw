@@ -62,6 +62,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
+MUTE_SOUNDS = True
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -93,6 +94,11 @@ ghostcolor[2] = (128, 255, 255, 255)
 ghostcolor[3] = (255, 128, 0, 255)
 ghostcolor[4] = (50, 50, 255, 255)  # blue, vulnerable ghost
 ghostcolor[5] = (255, 255, 255, 255)  # white, flashing ghost
+
+
+def play_sound(snd, loops=0):
+    if not MUTE_SOUNDS:
+        snd.play(loops)
 
 
 #      ___________________
@@ -240,7 +246,7 @@ class game():
 
         for specialScore in extraLifeSet:
             if self.score < specialScore and self.score + amount >= specialScore:
-                snd_extralife.play()
+                play_sound(snd_extralife)
                 thisGame.lives += 1
 
         self.score += amount
@@ -725,7 +731,7 @@ class fruit():
         elif self.bouncei == 16:
             self.bounceY = 0
             self.bouncei = 0
-            snd_fruitbounce.play()
+            play_sound(snd_fruitbounce)
 
         self.slowTimer += 1
         if self.slowTimer == 2:
@@ -819,7 +825,7 @@ class PacMan:
                 if self.power_pellets:
                     self.power_pellets -= 1
                     pygame.mixer.stop()
-                    snd_powerpellet.play()
+                    play_sound(snd_powerpellet)
                     thisGame.ghostValue = 200
                     thisGame.ghostTimer = 360
                     for g in range(0, GHOSTS_QTY, 1):
@@ -832,18 +838,18 @@ class PacMan:
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
                     # ghost is normal, pacman dies
-                    snd_killpac.play()
+                    play_sound(snd_killpac)
                     snd_eyes.stop()
                     thisGame.SetMode(2)
                 elif ghosts[i].state == 2:
                     # ghost is vulnerable, ghost dies
                     thisGame.AddToScore(thisGame.ghostValue)
                     thisGame.ghostValue = thisGame.ghostValue * 2
-                    snd_eatgh.play()
+                    play_sound(snd_eatgh)
                     ghosts[i].state = 3
                     ghosts[i].speed = ghosts[i].speed * 4
                     snd_eyes.stop()
-                    snd_eyes.play(-1)
+                    play_sound(snd_eyes, loops=-1)
                     # and send them to the ghost box
                     ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
                     ghosts[i].y = ghosts[i].nearest_row * TILE_HEIGHT
@@ -1079,7 +1085,7 @@ class level():
                     if result == tileID['pellet']:
                         # got a pellet
                         thisLevel.SetMapTile((iRow, iCol), 0)
-                        snd_pellet[player.pellet_snd_num].play()
+                        play_sound(snd_pellet[player.pellet_snd_num])
                         player.pellet_snd_num = 1 - player.pellet_snd_num
 
                         thisLevel.pellets -= 1
@@ -1466,7 +1472,7 @@ def check_inputs():
             else:
                 # we at menu and will start the game
                 thisGame.StartNewGame()
-                snd_ready.play()
+                play_sound(snd_ready)
     if pygame.key.get_pressed()[pygame.K_F5]:
         sys.exit(0)
 
