@@ -62,7 +62,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = True
+MUTE_SOUNDS = False
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -265,14 +265,15 @@ class game():
         #screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
 
         if self.mode == 3:
-            if self.levelNum != 0:
+            # hack x.x
+            if self.levelNum != 0 and thisGame.modeTimer >= 150:
                 screen.blit(self.imGameOver, (-270, 0))
-        elif self.mode == 4:
+
+        if self.mode == 4:
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 55, self.screenSize[1] / 2 + 12))
 
         # Show level number:
         #self.DrawNumber(self.levelNum, (0, self.screenSize[1] - 20))
-
 
         for i in range(0, player.power_pellets):
             screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, self.screenSize[1] - 18))
@@ -560,8 +561,8 @@ class ghost():
 
     def Draw(self):
 
-        if thisGame.mode == 3:
-            return False
+        # if thisGame.mode == 3:
+        #     return False
 
         # ghost eyes --
         for y in range(6, 12, 1):
@@ -910,8 +911,8 @@ class PacMan:
             self.FollowNextPathWay()
 
     def draw(self):
-        if thisGame.mode == 3:
-            return False
+        # if thisGame.mode == 3:
+        #     return False
         # set the current frame array to match the direction pacman is facing
         if self.vel_x > 0:
             self.anim_current = self.anim_right
@@ -1096,6 +1097,7 @@ class level():
                             # no more pellets left!
                             # WON THE LEVEL
                             # thisGame.SetMode(6)
+                            play_sound(snd_killpac)
                             thisGame.SetMode(3)
 
                     elif result == tileID['pellet-power']:
@@ -1300,8 +1302,8 @@ class level():
                         if thisID == 4:
                             # starting position for pac-man
 
-                            player1.home_x = k * TILE_WIDTH
-                            player1.home_y = rowNum * TILE_HEIGHT
+                            player.home_x = k * TILE_WIDTH
+                            player.home_y = rowNum * TILE_HEIGHT
                             self.SetMapTile((rowNum, k), 0)
 
                         elif thisID >= 10 and thisID <= 13:
@@ -1535,8 +1537,8 @@ def GetCrossRef():
 # ___/  main code block  \_____________________________________________________
 
 # create the pacman
-player1 = PacMan()
-players = [player1]
+player = PacMan()
+players = [player]
 
 # create a path_finder object
 path = PathFinder()
@@ -1626,6 +1628,30 @@ while True:
     elif thisGame.mode == 3:
         # gameover
         check_inputs()
+        if thisGame.levelNum != 0:
+            thisGame.modeTimer += 1
+            if thisGame.modeTimer == 60:
+                print '==60'
+                oldEdgeLightColor = thisLevel.edgeLightColor
+                oldEdgeShadowColor = thisLevel.edgeShadowColor
+                oldFillColor = thisLevel.fillColor
+            elif 60 < thisGame.modeTimer < 150:
+                whiteSet = [70, 90, 110, 130]
+                normalSet = [80, 100, 120, 140]
+                if not whiteSet.count(thisGame.modeTimer) == 0:
+                    print '<150 white'
+                    # member of white set
+                    thisLevel.edgeLightColor = (255, 255, 254, 255)
+                    thisLevel.edgeShadowColor = (255, 255, 254, 255)
+                    thisLevel.fillColor = (0, 0, 0, 255)
+                    GetCrossRef()
+                elif not normalSet.count(thisGame.modeTimer) == 0:
+                    print '<150 normal'
+                    # member of normal set
+                    thisLevel.edgeLightColor = oldEdgeLightColor
+                    thisLevel.edgeShadowColor = oldEdgeShadowColor
+                    thisLevel.fillColor = oldFillColor
+                    GetCrossRef()
 
     elif thisGame.mode == 4:
         # waiting to start
@@ -1690,15 +1716,12 @@ while True:
             if thisGame.modeTimer % 2 == 0:
                 thisGame.DrawNumber(2500, (thisFruit.x - thisGame.screenPixelPos[0] - 16, thisFruit.y - thisGame.screenPixelPos[1] + 4))
 
-        for i in range(0, GHOSTS_QTY, 1):
-            ghosts[i].Draw()
-        thisFruit.Draw()
-        for player in players:
-            player.draw()
-
-        if thisGame.mode == 3:
-            pass
-            # screen.blit(thisGame.imHiscores, (HS_XOFFSET, HS_YOFFSET))
+        if thisGame.levelNum != 0:
+            for i in range(0, GHOSTS_QTY, 1):
+                ghosts[i].Draw()
+            thisFruit.Draw()
+            for player in players:
+                player.draw()
 
     if thisGame.mode == 5:
         for player in players:
