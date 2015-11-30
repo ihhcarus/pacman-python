@@ -1023,10 +1023,7 @@ class level():
     def GetMapTile(self, (row, col), printed=False):
         if row >= 0 and row < self.lvlHeight and col >= 0 and col < self.lvlWidth:
             return self.map[(row * self.lvlWidth) + col]
-        else:
-            if printed:
-                print row, col, self.lvlHeight, self.lvlWidth
-            return 0
+        return 0
 
     def IsWall(self, (row, col)):
 
@@ -1438,7 +1435,7 @@ def CheckIfCloseButton(events):
             sys.exit(0)
 
 
-def CheckInputs1():
+def check_inputs():
     if thisGame.mode == 1:
         for ghost, controls in ghosts_controls.items():
             js = controls[4]
@@ -1461,8 +1458,15 @@ def CheckInputs1():
                         ghost.vel_y = -ghost.speed
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN]:
-            thisGame.StartNewGame()
-            snd_ready.play()
+            if thisGame.levelNum != 0:
+                # we at gameover and will show the menu again
+                thisLevel.LoadLevel(0)
+                thisGame.levelNum = 0
+                screen.blit(thisGame.imLogo, (-255, 0))
+            else:
+                # we at menu and will start the game
+                thisGame.StartNewGame()
+                snd_ready.play()
     if pygame.key.get_pressed()[pygame.K_F5]:
         sys.exit(0)
 
@@ -1576,7 +1580,8 @@ thisGame = game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
 
-DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
+# DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
+DISPLAY_MODE_FLAGS = 0
 
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)    
@@ -1587,7 +1592,7 @@ while True:
 
     if thisGame.mode == 1:
         # normal gameplay mode
-        CheckInputs1()
+        check_inputs()
 
         thisGame.modeTimer += 1
         for player in players:
@@ -1613,8 +1618,8 @@ while True:
                 thisGame.SetMode(4)
 
     elif thisGame.mode == 3:
-        # game over
-        CheckInputs1()
+        # gameover
+        check_inputs()
 
     elif thisGame.mode == 4:
         # waiting to start
@@ -1622,7 +1627,6 @@ while True:
 
         if thisGame.modeTimer == 90:
             thisGame.SetMode(1)
-            # player.vel_x = -player.speed
 
     elif thisGame.mode == 5:
         # brief pause after munching a vulnerable ghost
