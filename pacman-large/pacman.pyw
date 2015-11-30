@@ -791,6 +791,7 @@ class PacMan:
         self.anim_current = {}
 
         self.currentPath = ""
+        self.steps_to_change_path = 2
 
         for i in range(1, 9, 1):
             self.anim_left[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert_alpha()
@@ -826,7 +827,7 @@ class PacMan:
                             ghosts[g].state = 2
             # otherwise, try to escape
             elif dist < 100 and ghost.state != 2:
-                if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
+                if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0 and self.steps_to_change_path <= 0:
                     thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
             if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
                 if ghosts[i].state == 1:
@@ -864,6 +865,7 @@ class PacMan:
             # pacman is lined up with the grid again, meaning it's time to go to the next path item
             if len(self.currentPath) > 0:
                 self.currentPath = self.currentPath[1:]
+                self.steps_to_change_path -= 1
             else:
                 self.x = self.nearest_col * TILE_WIDTH
                 self.y = self.nearest_row * TILE_HEIGHT
@@ -1408,14 +1410,14 @@ class level():
                 go_to_quadrant = random.choice(possible_quadrants)
                 # print '   |-+but we will go to: %s with padding %s' % (str(go_to_quadrant), str((self.pad_h, self.pad_w)))
                 (go_to_row, go_to_col) = (0, 0)
-                count = 1024
+                tries = 1024
                 while not thisLevel.GetMapTile((go_to_row, go_to_col)) == tileID['pellet'] or thisLevel.GetMapTile((go_to_row, go_to_col)) == 0 or (go_to_row, go_to_col) == (0, 0):
-                    if count == 0:
+                    if not tries:
                         break
-                    count -= 1
+                    tries -= 1
                     go_to_col = random.randint(go_to_quadrant[0][0], go_to_quadrant[0][1])
                     go_to_row = random.randint(go_to_quadrant[1][0], go_to_quadrant[1][1])
-                if count == 0:
+                if tries == 0:
                     pass
                     # print '     |-+nao achei nada'
                 else:
@@ -1423,6 +1425,7 @@ class level():
                     next_path = path.find_path((player.nearest_row, player.nearest_col), (go_to_row + self.pad_h, go_to_col + self.pad_w))
                     if next_path:
                         player.currentPath = next_path[0] + next_path
+                        player.steps_to_change_path = 2
                         # print '       |-+with path: %s' % next_path
                     else:
                         pass
