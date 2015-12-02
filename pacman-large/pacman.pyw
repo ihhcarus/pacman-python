@@ -62,7 +62,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = False
+MUTE_SOUNDS = True
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -285,13 +285,19 @@ class game():
 
     def DrawScore(self):
         self.DrawNumber(self.score, (SCORE_XOFFSET, self.screenSize[1] - SCORE_YOFFSET))
+        self.DrawNumber(self.score, (SCORE_XOFFSET, 0))
 
         screen.blit(self.imScore, (250 + 56 + -120, self.screenSize[1] - 36))
         screen.blit(self.imLives, (250 + 56 + 40, self.screenSize[1] - 36))
         screen.blit(self.imPower, (250 + 56 + 180, self.screenSize[1] - 36))
 
+        screen.blit(self.imScore, (250 + 56 + -120, 36))
+        screen.blit(self.imLives, (250 + 56 + 40, 36))
+        screen.blit(self.imPower, (250 + 56 + 180, 36))
+
         for i in range(0, self.lives, 1):
             screen.blit(self.imLife, (34 + i * 15 + 16 + 297, self.screenSize[1] - 17))
+            screen.blit(self.imLife, (34 + i * 15 + 16 + 297, 17))
 
         # Draw fruit of this map:
         # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
@@ -309,6 +315,7 @@ class game():
 
         for i in range(0, player.power_pellets):
             screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, self.screenSize[1] - 18))
+            screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, 18))
 
     def DrawNumber(self, number, (x, y)):
         strNumber = str(number)
