@@ -18,6 +18,9 @@
 #   Added constants TILE_WIDTH,TILE_HEIGHT to make this easier to change later.
 from collections import OrderedDict, namedtuple
 from math import sqrt
+
+from pygame.transform import flip
+
 import pygame, sys, os, random
 from pygame.locals import *
 
@@ -69,7 +72,7 @@ pygame.init()
 
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # change these to run in windowed mode
-#DISPLAY_MODE_FLAGS = 0
+DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -289,19 +292,19 @@ class game():
 
     def DrawScore(self):
         self.DrawNumber(self.score, (SCORE_XOFFSET, self.screenSize[1] - SCORE_YOFFSET))
-        self.DrawNumber(self.score, (SCORE_XOFFSET, 0))
+        self.DrawNumber(self.score, (SCORE_XOFFSET, 0), flip_xy=True)
 
         screen.blit(self.imScore, (250 + 56 + -120, self.screenSize[1] - 36))
         screen.blit(self.imLives, (250 + 56 + 40, self.screenSize[1] - 36))
         screen.blit(self.imPower, (250 + 56 + 180, self.screenSize[1] - 36))
 
-        screen.blit(self.imScore, (250 + 56 + -120, 36))
-        screen.blit(self.imLives, (250 + 56 + 40, 36))
-        screen.blit(self.imPower, (250 + 56 + 180, 36))
+        screen.blit(flip(self.imScore, True, True), (250 + 56 + -120, 36))
+        screen.blit(flip(self.imLives, True, True), (250 + 56 + 40, 36))
+        screen.blit(flip(self.imPower, True, True), (250 + 56 + 180, 36))
 
         for i in range(0, self.lives, 1):
             screen.blit(self.imLife, (34 + i * 15 + 16 + 297, self.screenSize[1] - 17))
-            screen.blit(self.imLife, (34 + i * 15 + 16 + 297, 17))
+            screen.blit(flip(self.imLife, True, True), (34 + i * 15 + 16 + 300, 17))
 
         # Draw fruit of this map:
         # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
@@ -314,21 +317,24 @@ class game():
         if self.mode == 4:
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 55, self.screenSize[1] / 2 + 12))
 
-        # Show level number:
-        # self.DrawNumber(self.levelNum, (0, self.screenSize[1] - 20))
-
         for i in range(0, player.power_pellets):
             screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, self.screenSize[1] - 18))
-            screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, 18))
+            screen.blit(self.imPowPel, (250 - (i * 20) + 280, 18))
 
-    def DrawNumber(self, number, (x, y)):
-        strNumber = str(number)
-
-        for i in range(0, len(str(number)), 1):
-            iDigit = int(strNumber[i])
-            screen.blit(self.digit[iDigit], (x + i * SCORE_COLWIDTH + 10 + 135, y + 15))
+    def DrawNumber(self, number, (x, y), flip_xy=False):
+        str_number = str(number)
+        for i in range(0, len(str(number))):
+            int_digit = int(str_number[i])
+            x_pos = i * SCORE_COLWIDTH
+            if flip_xy:
+                x_pos *= -1
+                x_pos += 22
+            screen.blit(flip(self.digit[int_digit], flip_xy, flip_xy), (x + x_pos + 145, y + 15))
         if self.score > 0:
-            screen.blit(self.imNeg, (x - 4 + 135, y + 15))
+            x_pos = x - 4 + 135
+            if flip_xy:
+                x_pos += 50
+            screen.blit(self.imNeg, (x_pos, y + 15))
 
     def SmartMoveScreen(self):
         # Comentando pra nao mover a tela automaticamente
