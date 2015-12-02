@@ -87,13 +87,24 @@ snd_ready = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ready
 snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.wav"))
 snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
 
-ghostcolor = {}
-ghostcolor[0] = (255, 0, 0, 255)
-ghostcolor[1] = (255, 128, 255, 255)
-ghostcolor[2] = (128, 255, 255, 255)
-ghostcolor[3] = (255, 128, 0, 255)
-ghostcolor[4] = (50, 50, 255, 255)  # blue, vulnerable ghost
-ghostcolor[5] = (255, 255, 255, 255)  # white, flashing ghost
+GHOSTS_QTY = 2
+VULNERABLE_GHOST_ID = GHOSTS_QTY
+FLASHING_GHOST_ID = GHOSTS_QTY + 1
+
+CONTROLS = [
+    [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
+    [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
+    [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
+    [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
+]
+
+RED = (255, 0, 0, 255)
+PINK = (255, 128, 255, 255)
+CYAN = (128, 255, 255, 255)
+ORANGE = (255, 128, 0, 255)
+BLUE_VULNERABLE = (50, 50, 255, 255)
+WHITE_FLASHING = (255, 255, 255, 255)
+GHOST_COLORS = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE, VULNERABLE_GHOST_ID: BLUE_VULNERABLE, FLASHING_GHOST_ID: WHITE_FLASHING}
 
 
 def play_sound(snd, loops=0):
@@ -101,7 +112,7 @@ def play_sound(snd, loops=0):
         snd.play(loops)
 
 
-#      ___________________
+# ___________________
 # ___/  class definitions  \_______________________________________________
 
 class game():
@@ -262,7 +273,7 @@ class game():
             screen.blit(self.imLife, (34 + i * 15 + 16 + 297, self.screenSize[1] - 17))
 
         # Draw fruit of this map:
-        #screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
+        # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
 
         if self.mode == 3:
             # hack x.x
@@ -273,7 +284,7 @@ class game():
             screen.blit(self.imReady, (self.screenSize[0] / 2 - 55, self.screenSize[1] / 2 + 12))
 
         # Show level number:
-        #self.DrawNumber(self.levelNum, (0, self.screenSize[1] - 20))
+        # self.DrawNumber(self.levelNum, (0, self.screenSize[1] - 20))
 
         for i in range(0, player.power_pellets):
             screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, self.screenSize[1] - 18))
@@ -552,9 +563,9 @@ class ghost():
             # change the ghost color in this frame
             for y in range(0, TILE_HEIGHT, 1):
                 for x in range(0, TILE_WIDTH, 1):
-                    if self.anim[i].get_at((x, y)) == (255, 0, 0, 255):
+                    if self.anim[i].get_at((x, y)) == RED:
                         # default, red ghost body color
-                        self.anim[i].set_at((x, y), ghostcolor[self.id])
+                        self.anim[i].set_at((x, y), GHOST_COLORS[self.id])
 
         self.animFrame = 1
         self.animDelay = 0
@@ -598,14 +609,14 @@ class ghost():
             # draw vulnerable ghost
             if thisGame.ghostTimer > 100:
                 # blue
-                screen.blit(ghosts[VULNERABLE_GHOST].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                screen.blit(ghosts[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
             else:
                 # blue/white flashing
                 tempTimerI = int(thisGame.ghostTimer / 10)
                 if tempTimerI == 1 or tempTimerI == 3 or tempTimerI == 5 or tempTimerI == 7 or tempTimerI == 9:
-                    screen.blit(ghosts[FLASHING_GHOST].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(ghosts[FLASHING_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
-                    screen.blit(ghosts[VULNERABLE_GHOST].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(ghosts[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
@@ -1543,28 +1554,23 @@ players = [player]
 # create a path_finder object
 path = PathFinder()
 
-# create ghost objects
-VULNERABLE_GHOST = 4
-FLASHING_GHOST = 5
-GHOSTS_QTY = 4
+# first_ghost = ghost(0)
+# second_ghost = ghost(1)
+# third_ghost = ghost(2)
+# fourth_ghost = ghost(3)
+# ghosts_controls = OrderedDict({
+#     first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
+#     second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
+#     third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
+#     fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
+# })
 
-first_ghost = ghost(0)
-second_ghost = ghost(1)
-third_ghost = ghost(2)
-fourth_ghost = ghost(3)
-ghosts_controls = OrderedDict({
-    first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
-    second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
-    third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
-    fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
-})
-# for g in ghosts_controls.keys():
-#     print g.id, ghostcolor[g.id]
-# 0 (255, 0, 0, 255)
-# 1 (255, 128, 255, 255)
-# 2 (128, 255, 255, 255)
-# 3 (255, 128, 0, 255)
-ghosts = ghosts_controls.keys() + [ghost(4), ghost(5)]
+ghosts_controls = OrderedDict()
+for g_id in range(GHOSTS_QTY):
+    new_ghost = ghost(g_id)
+    ghosts_controls[new_ghost] = CONTROLS[g_id]
+
+ghosts = ghosts_controls.keys() + [ghost(VULNERABLE_GHOST_ID), ghost(FLASHING_GHOST_ID)]
 
 joy_count = pygame.joystick.get_count()
 # print 'we have %d joystick' % joy_count
@@ -1592,7 +1598,7 @@ thisLevel.LoadLevel(thisGame.GetLevelNum())
 DISPLAY_MODE_FLAGS = 0
 
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
-pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)    
+pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
 while True:
 
@@ -1631,7 +1637,6 @@ while True:
         if thisGame.levelNum != 0:
             thisGame.modeTimer += 1
             if thisGame.modeTimer == 60:
-                print '==60'
                 oldEdgeLightColor = thisLevel.edgeLightColor
                 oldEdgeShadowColor = thisLevel.edgeShadowColor
                 oldFillColor = thisLevel.fillColor
@@ -1639,14 +1644,12 @@ while True:
                 whiteSet = [70, 90, 110, 130]
                 normalSet = [80, 100, 120, 140]
                 if not whiteSet.count(thisGame.modeTimer) == 0:
-                    print '<150 white'
                     # member of white set
                     thisLevel.edgeLightColor = (255, 255, 254, 255)
                     thisLevel.edgeShadowColor = (255, 255, 254, 255)
                     thisLevel.fillColor = (0, 0, 0, 255)
                     GetCrossRef()
                 elif not normalSet.count(thisGame.modeTimer) == 0:
-                    print '<150 normal'
                     # member of normal set
                     thisLevel.edgeLightColor = oldEdgeLightColor
                     thisLevel.edgeShadowColor = oldEdgeShadowColor
