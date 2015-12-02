@@ -1378,42 +1378,29 @@ class level():
         self.Restart()
 
     def Restart(self):
-
         for i in range(0, GHOSTS_QTY, 1):
             # move ghosts back to home
-
             GHOSTS[i].x = GHOSTS[i].homeX
             GHOSTS[i].y = GHOSTS[i].homeY
             GHOSTS[i].vel_x = 0
             GHOSTS[i].vel_y = 0
             GHOSTS[i].state = 1
             GHOSTS[i].speed = 1
-            GHOSTS[i].Move()
-
-            # give each ghost a path to a random spot (containing a pellet)
-            (randRow, randCol) = (0, 0)
-
-            while not self.GetMapTile((randRow, randCol)) == tileID['pellet'] or (randRow, randCol) == (0, 0):
-                randRow = random.randint(1, self.lvlHeight - 2)
-                randCol = random.randint(1, self.lvlWidth - 2)
-
-            GHOSTS[i].currentPath = path.find_path((GHOSTS[i].nearest_row, GHOSTS[i].nearest_col), (randRow, randCol))
-            GHOSTS[i].FollowNextPathWay()
 
         thisFruit.active = False
 
         thisGame.fruitTimer = 0
+        thisGame.lives = 3
 
-        for player in players:
-            player.x = player.home_x
-            player.y = player.home_y
-            player.vel_x = 0
-            player.vel_y = 0
+        player.x = player.home_x
+        player.y = player.home_y
+        player.vel_x = 0
+        player.vel_y = 0
 
-            player.anim_current = player.anim_stopped
-            player.animFrame = 3
+        player.anim_current = player.anim_stopped
+        player.animFrame = 3
 
-            player.power_pellets = 0
+        player.power_pellets = 0
 
     def get_quadrant(self, ghost_x, ghost_y, player_x, player_y):
         actual_ghost_pos_x = ghost_x - self.pad_w
@@ -1592,7 +1579,6 @@ def GetCrossRef():
 
 # create the pacman
 player = PacMan()
-players = [player]
 
 # create a path_finder object
 path = PathFinder()
@@ -1630,19 +1616,19 @@ while True:
 
     CheckIfCloseButton(pygame.event.get())
 
-    if thisGame.mode == 1:
-        # normal gameplay mode
+    if thisGame.mode == 1:  # normal gameplay mode
         check_inputs()
 
         thisGame.modeTimer += 1
-        for player in players:
-            player.move()
+
+        player.move()
+
         for i in range(0, GHOSTS_QTY, 1):
             GHOSTS[i].Move()
+
         thisFruit.Move()
 
-    elif thisGame.mode == 2:
-        # waiting after getting hit by a ghost
+    elif thisGame.mode == 2:  # waiting after getting hit by a ghost
         thisGame.modeTimer += 1
 
         if thisGame.modeTimer == 90:
@@ -1652,14 +1638,13 @@ while True:
             if thisGame.lives == -1:
                 thisGame.updatehiscores(thisGame.score)
                 thisGame.SetMode(6)
-                # thisGame.SetMode(3)
                 thisGame.drawmidgamehiscores()
             else:
                 thisGame.SetMode(4)
 
-    elif thisGame.mode == 3:
-        # gameover
+    elif thisGame.mode == 3:  # game over
         check_inputs()
+
         if thisGame.levelNum != 0:
             thisGame.modeTimer += 1
             if thisGame.modeTimer == 60:
@@ -1670,34 +1655,29 @@ while True:
                 whiteSet = [70, 90, 110, 130]
                 normalSet = [80, 100, 120, 140]
                 if not whiteSet.count(thisGame.modeTimer) == 0:
-                    # member of white set
                     thisLevel.edgeLightColor = (255, 255, 254, 255)
                     thisLevel.edgeShadowColor = (255, 255, 254, 255)
                     thisLevel.fillColor = (0, 0, 0, 255)
                     GetCrossRef()
                 elif not normalSet.count(thisGame.modeTimer) == 0:
-                    # member of normal set
                     thisLevel.edgeLightColor = oldEdgeLightColor
                     thisLevel.edgeShadowColor = oldEdgeShadowColor
                     thisLevel.fillColor = oldFillColor
                     GetCrossRef()
 
-    elif thisGame.mode == 4:
-        # waiting to start
+    elif thisGame.mode == 4:  # waiting to start
         thisGame.modeTimer += 1
 
         if thisGame.modeTimer == 90:
             thisGame.SetMode(1)
 
-    elif thisGame.mode == 5:
-        # brief pause after munching a vulnerable ghost
+    elif thisGame.mode == 5:  # brief pause after munching a vulnerable ghost
         thisGame.modeTimer += 1
 
         if thisGame.modeTimer == 30:
             thisGame.SetMode(1)
 
-    elif thisGame.mode == 6:
-        # pause after eating all the pellets
+    elif thisGame.mode == 6:  # pause after eating all the pellets
         thisGame.modeTimer += 1
 
         if thisGame.modeTimer == 60:
@@ -1706,21 +1686,18 @@ while True:
             oldEdgeShadowColor = thisLevel.edgeShadowColor
             oldFillColor = thisLevel.fillColor
 
-    elif thisGame.mode == 7:
-        # flashing maze after finishing level
+    elif thisGame.mode == 7:  # flashing maze after finishing level
         thisGame.modeTimer += 1
 
         whiteSet = [10, 30, 50, 70]
         normalSet = [20, 40, 60, 80]
 
         if not whiteSet.count(thisGame.modeTimer) == 0:
-            # member of white set
             thisLevel.edgeLightColor = (255, 255, 254, 255)
             thisLevel.edgeShadowColor = (255, 255, 254, 255)
             thisLevel.fillColor = (0, 0, 0, 255)
             GetCrossRef()
         elif not normalSet.count(thisGame.modeTimer) == 0:
-            # member of normal set
             thisLevel.edgeLightColor = oldEdgeLightColor
             thisLevel.edgeShadowColor = oldEdgeShadowColor
             thisLevel.fillColor = oldFillColor
@@ -1728,8 +1705,7 @@ while True:
         elif thisGame.modeTimer == 150:
             thisGame.SetMode(8)
 
-    elif thisGame.mode == 8:
-        # blank screen before changing levels
+    elif thisGame.mode == 8:  # blank screen before changing levels
         thisGame.modeTimer += 1
         if thisGame.modeTimer == 10:
             thisGame.SetNextLevel()
@@ -1748,12 +1724,12 @@ while True:
         if thisGame.levelNum != 0:
             for i in range(0, GHOSTS_QTY, 1):
                 GHOSTS[i].Draw()
+
             thisFruit.Draw()
-            for player in players:
-                player.draw()
+
+            player.draw()
 
     if thisGame.mode == 5:
-        for player in players:
             thisGame.DrawNumber(thisGame.ghostValue / 2, (player.x - thisGame.screenPixelPos[0] - 4, player.y - thisGame.screenPixelPos[1] + 6))
 
     thisGame.DrawScore()
