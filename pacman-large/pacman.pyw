@@ -16,7 +16,7 @@
 # Modified by Andy Sommerville, 11 October 2007:
 # - Mom's eyes aren't what they used to be, so I'm switching 16x16 tiles to 24x24
 #   Added constants TILE_WIDTH,TILE_HEIGHT to make this easier to change later.
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from math import sqrt
 import pygame, sys, os, random
 from pygame.locals import *
@@ -67,6 +67,10 @@ MUTE_SOUNDS = False
 clock = pygame.time.Clock()
 pygame.init()
 
+DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
+# change these to run in windowed mode
+# DISPLAY_MODE_FLAGS = 0
+
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
 
@@ -87,17 +91,23 @@ snd_ready = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ready
 snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.wav"))
 snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
 
-GHOSTS_QTY = 2
+# ghosts setup
+GHOSTS_QTY = 4
 VULNERABLE_GHOST_ID = GHOSTS_QTY
 FLASHING_GHOST_ID = GHOSTS_QTY + 1
 
+# ghosts controls setup
+CONTROLS_DEF = ['right', 'left', 'down', 'up', 'joystick_id']
+Control = namedtuple("Control", CONTROLS_DEF)
+
 CONTROLS = [
-    [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
-    [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
-    [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
-    [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
+    [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP],
+    [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t],
+    [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w],
+    [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i],
 ]
 
+# colors for the ghosts
 RED = (255, 0, 0, 255)
 PINK = (255, 128, 255, 255)
 CYAN = (128, 255, 255, 255)
@@ -105,6 +115,17 @@ ORANGE = (255, 128, 0, 255)
 BLUE_VULNERABLE = (50, 50, 255, 255)
 WHITE_FLASHING = (255, 255, 255, 255)
 GHOST_COLORS = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE, VULNERABLE_GHOST_ID: BLUE_VULNERABLE, FLASHING_GHOST_ID: WHITE_FLASHING}
+
+# unused yet
+MODE_MENU_INTRO = 0
+MODE_MENU_SETUP = 1
+MODE_GAME_PLAY = 2
+MODE_GAME_PACMAN_DEAD = 3
+MODE_GAME_GHOST_DEAD = 4
+MODE_GAME_ZERO_PELLETS = 5
+MODE_GAME_NO_LIVES = 6
+MODE_MENU_GAME_OVER = 7
+MODE_MENU_HIGH_SCORES = 8
 
 
 def play_sound(snd, loops=0):
@@ -570,6 +591,10 @@ class ghost():
         self.animFrame = 1
         self.animDelay = 0
 
+        # default controls is just the keyboard, in main menu we add the joystick if it's available
+        if self.id < GHOSTS_QTY:  # no controls for vulnerable/white ghosts
+            self.controls = build_controls(CONTROLS[self.id] + [None])
+
     def Draw(self):
 
         # if thisGame.mode == 3:
@@ -609,14 +634,14 @@ class ghost():
             # draw vulnerable ghost
             if thisGame.ghostTimer > 100:
                 # blue
-                screen.blit(ghosts[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                screen.blit(GHOSTS[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
             else:
                 # blue/white flashing
                 tempTimerI = int(thisGame.ghostTimer / 10)
                 if tempTimerI == 1 or tempTimerI == 3 or tempTimerI == 5 or tempTimerI == 7 or tempTimerI == 9:
-                    screen.blit(ghosts[FLASHING_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(GHOSTS[FLASHING_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
-                    screen.blit(ghosts[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(GHOSTS[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 3:
             # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
@@ -658,8 +683,8 @@ class ghost():
                 else:
                     self.speed /= 4
                     self.state = 1
-                    for i in range(0, len(ghosts)):
-                        if ghosts[i].state == 3:
+                    for i in range(0, len(GHOSTS)):
+                        if GHOSTS[i].state == 3:
                             return
                     snd_eyes.stop()
 
@@ -829,8 +854,8 @@ class PacMan:
         self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_WIDTH))
 
         thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
-        for i in range(0, len(ghosts)):
-            ghost = ghosts[i]
+        for i in range(0, len(GHOSTS)):
+            ghost = GHOSTS[i]
             dist = sqrt(pow(self.x - ghost.x, 2) + pow(self.y - ghost.y, 2))
             # if we get to close to ghosts, use a power pellet to smash them >:D
             if dist < 15 and ghost.state == 1:
@@ -841,32 +866,32 @@ class PacMan:
                     thisGame.ghostValue = 200
                     thisGame.ghostTimer = 360
                     for g in range(0, GHOSTS_QTY, 1):
-                        if ghosts[g].state == 1:
-                            ghosts[g].state = 2
+                        if GHOSTS[g].state == 1:
+                            GHOSTS[g].state = 2
             # otherwise, try to escape
             elif dist < 100 and ghost.state != 2:
                 if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0 and self.steps_to_change_path <= 0:
                     thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
-            if thisLevel.CheckIfHit((self.x, self.y), (ghosts[i].x, ghosts[i].y), TILE_WIDTH / 2):
-                if ghosts[i].state == 1:
+            if thisLevel.CheckIfHit((self.x, self.y), (GHOSTS[i].x, GHOSTS[i].y), TILE_WIDTH / 2):
+                if GHOSTS[i].state == 1:
                     # ghost is normal, pacman dies
                     play_sound(snd_killpac)
                     snd_eyes.stop()
                     thisGame.SetMode(2)
-                elif ghosts[i].state == 2:
+                elif GHOSTS[i].state == 2:
                     # ghost is vulnerable, ghost dies
                     thisGame.AddToScore(thisGame.ghostValue)
                     thisGame.ghostValue = thisGame.ghostValue * 2
                     play_sound(snd_eatgh)
-                    ghosts[i].state = 3
-                    ghosts[i].speed = ghosts[i].speed * 4
+                    GHOSTS[i].state = 3
+                    GHOSTS[i].speed = GHOSTS[i].speed * 4
                     snd_eyes.stop()
                     play_sound(snd_eyes, loops=-1)
                     # and send them to the ghost box
-                    ghosts[i].x = ghosts[i].nearest_col * TILE_WIDTH
-                    ghosts[i].y = ghosts[i].nearest_row * TILE_HEIGHT
-                    ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (thisLevel.GetGhostBoxPos()[0], thisLevel.GetGhostBoxPos()[1]))
-                    ghosts[i].FollowNextPathWay()
+                    GHOSTS[i].x = GHOSTS[i].nearest_col * TILE_WIDTH
+                    GHOSTS[i].y = GHOSTS[i].nearest_row * TILE_HEIGHT
+                    GHOSTS[i].currentPath = path.find_path((GHOSTS[i].nearest_row, GHOSTS[i].nearest_col), (thisLevel.GetGhostBoxPos()[0], thisLevel.GetGhostBoxPos()[1]))
+                    GHOSTS[i].FollowNextPathWay()
                     # set game mode to brief pause after eating
                     thisGame.SetMode(5)
 
@@ -875,8 +900,8 @@ class PacMan:
             thisGame.ghostTimer -= 1
             if thisGame.ghostTimer == 0:
                 for i in range(0, GHOSTS_QTY, 1):
-                    if ghosts[i].state == 2:
-                        ghosts[i].state = 1
+                    if GHOSTS[i].state == 2:
+                        GHOSTS[i].state = 1
                 thisGame.ghostValue = 0
 
         if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
@@ -1320,8 +1345,8 @@ class level():
                         elif thisID >= 10 and thisID <= 13:
                             # one of the ghosts
                             try:
-                                ghosts[thisID - 10].homeX = k * TILE_WIDTH
-                                ghosts[thisID - 10].homeY = rowNum * TILE_HEIGHT
+                                GHOSTS[thisID - 10].homeX = k * TILE_WIDTH
+                                GHOSTS[thisID - 10].homeY = rowNum * TILE_HEIGHT
                                 self.SetMapTile((rowNum, k), 0)
                             except:
                                 pass
@@ -1357,13 +1382,13 @@ class level():
         for i in range(0, GHOSTS_QTY, 1):
             # move ghosts back to home
 
-            ghosts[i].x = ghosts[i].homeX
-            ghosts[i].y = ghosts[i].homeY
-            ghosts[i].vel_x = 0
-            ghosts[i].vel_y = 0
-            ghosts[i].state = 1
-            ghosts[i].speed = 1
-            ghosts[i].Move()
+            GHOSTS[i].x = GHOSTS[i].homeX
+            GHOSTS[i].y = GHOSTS[i].homeY
+            GHOSTS[i].vel_x = 0
+            GHOSTS[i].vel_y = 0
+            GHOSTS[i].state = 1
+            GHOSTS[i].speed = 1
+            GHOSTS[i].Move()
 
             # give each ghost a path to a random spot (containing a pellet)
             (randRow, randCol) = (0, 0)
@@ -1372,8 +1397,8 @@ class level():
                 randRow = random.randint(1, self.lvlHeight - 2)
                 randCol = random.randint(1, self.lvlWidth - 2)
 
-            ghosts[i].currentPath = path.find_path((ghosts[i].nearest_row, ghosts[i].nearest_col), (randRow, randCol))
-            ghosts[i].FollowNextPathWay()
+            GHOSTS[i].currentPath = path.find_path((GHOSTS[i].nearest_row, GHOSTS[i].nearest_col), (randRow, randCol))
+            GHOSTS[i].FollowNextPathWay()
 
         thisFruit.active = False
 
@@ -1456,22 +1481,28 @@ def CheckIfCloseButton(events):
 
 def check_inputs():
     if thisGame.mode == 1:
-        for ghost, controls in ghosts_controls.items():
-            js = controls[4]
+        for i in range(0, GHOSTS_QTY, 1):
+            ghost = GHOSTS[i]
+            controls = ghost.controls
+            js = JOYSTICKS[controls.joystick_id] if controls.joystick_id is not None else None
             if ghost.state != 3:  # Can't move manually if the ghost is returning to the box
-                if pygame.key.get_pressed()[controls[0]] or (js and js.get_axis(JS_YAXIS) < -0.5):
+                # right
+                if pygame.key.get_pressed()[controls.right] or (js and js.get_axis(JS_XAXIS) > 0.5):
                     if not (ghost.vel_x == ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x + ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = ghost.speed
                         ghost.vel_y = 0
-                elif pygame.key.get_pressed()[controls[1]] or (js and js.get_axis(JS_YAXIS) > 0.5):
+                # left
+                elif pygame.key.get_pressed()[controls.left] or (js and js.get_axis(JS_XAXIS) < -0.5):
                     if not (ghost.vel_x == -ghost.speed and ghost.vel_y == 0) and not thisLevel.CheckIfHitWall((ghost.x - ghost.speed, ghost.y), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = -ghost.speed
                         ghost.vel_y = 0
-                elif pygame.key.get_pressed()[controls[2]] or (js and js.get_axis(JS_XAXIS) < -0.5):
+                # down
+                elif pygame.key.get_pressed()[controls.down] or (js and js.get_axis(JS_YAXIS) > 0.5):
                     if not (ghost.vel_x == 0 and ghost.vel_y == ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y + ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = 0
                         ghost.vel_y = ghost.speed
-                elif pygame.key.get_pressed()[controls[3]] or (js and js.get_axis(JS_XAXIS) > 0.5):
+                # up
+                elif pygame.key.get_pressed()[controls.up] or (js and js.get_axis(JS_YAXIS) < -0.5):
                     if not (ghost.vel_x == 0 and ghost.vel_y == -ghost.speed) and not thisLevel.CheckIfHitWall((ghost.x, ghost.y - ghost.speed), (ghost.nearest_row, ghost.nearest_col)):
                         ghost.vel_x = 0
                         ghost.vel_y = -ghost.speed
@@ -1486,8 +1517,20 @@ def check_inputs():
                 # we at menu and will start the game
                 thisGame.StartNewGame()
                 play_sound(snd_ready)
+        # map available joysticks to matching ghost (by id)
+        for j_id, joystick in enumerate(JOYSTICKS):
+            if joystick.get_button(5):
+                for ghost in GHOSTS:
+                    if ghost.id == j_id:
+                        if ghost.controls.joystick_id is None:
+                            control1 = build_controls(CONTROLS[j_id] + [j_id])
+                            ghost.controls = control1
     if pygame.key.get_pressed()[pygame.K_F5]:
         sys.exit(0)
+
+
+def build_controls(controls_list):
+    return Control(**{name: control for name, control in zip(CONTROLS_DEF, controls_list)})
 
 
 # _____________________________________________
@@ -1554,33 +1597,19 @@ players = [player]
 # create a path_finder object
 path = PathFinder()
 
-# first_ghost = ghost(0)
-# second_ghost = ghost(1)
-# third_ghost = ghost(2)
-# fourth_ghost = ghost(3)
-# ghosts_controls = OrderedDict({
-#     first_ghost: [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP, ],
-#     second_ghost: [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t, ],
-#     third_ghost: [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w, ],
-#     fourth_ghost: [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i, ],
-# })
+# setup joysticks
+JOYSTICKS = []
+joystick_count = pygame.joystick.get_count()
+for j in range(joystick_count):
+    new_joystick = pygame.joystick.Joystick(j)
+    new_joystick.init()
+    JOYSTICKS.append(new_joystick)
 
-ghosts_controls = OrderedDict()
+# create ghosts
+GHOSTS = []
 for g_id in range(GHOSTS_QTY):
-    new_ghost = ghost(g_id)
-    ghosts_controls[new_ghost] = CONTROLS[g_id]
-
-ghosts = ghosts_controls.keys() + [ghost(VULNERABLE_GHOST_ID), ghost(FLASHING_GHOST_ID)]
-
-joy_count = pygame.joystick.get_count()
-# print 'we have %d joystick' % joy_count
-for idx, controls in enumerate(ghosts_controls.values()):
-    joystick = None
-    if idx < joy_count:
-        # print 'created joystick %d' % idx
-        joystick = pygame.joystick.Joystick(idx)
-        joystick.init()
-    controls.append(joystick)
+    GHOSTS.append(ghost(g_id))
+GHOSTS += [ghost(VULNERABLE_GHOST_ID), ghost(FLASHING_GHOST_ID)]
 
 # create piece of fruit
 thisFruit = fruit()
@@ -1593,9 +1622,6 @@ tileIDImage = {}  # gives tile image (when the ID# is known)
 thisGame = game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
-
-# DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
-DISPLAY_MODE_FLAGS = 0
 
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
@@ -1612,7 +1638,7 @@ while True:
         for player in players:
             player.move()
         for i in range(0, GHOSTS_QTY, 1):
-            ghosts[i].Move()
+            GHOSTS[i].Move()
         thisFruit.Move()
 
     elif thisGame.mode == 2:
@@ -1721,7 +1747,7 @@ while True:
 
         if thisGame.levelNum != 0:
             for i in range(0, GHOSTS_QTY, 1):
-                ghosts[i].Draw()
+                GHOSTS[i].Draw()
             thisFruit.Draw()
             for player in players:
                 player.draw()
