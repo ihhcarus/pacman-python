@@ -69,7 +69,7 @@ pygame.init()
 
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # change these to run in windowed mode
-DISPLAY_MODE_FLAGS = 0
+#DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -259,6 +259,10 @@ class game():
         self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
         self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
+        self.imGhostRed = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert()
+        self.imGhostOrange = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert()
+        self.imGhostPink = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert()
+        self.imGhostBlue = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert()
         self.imHiscores = self.makehiscorelist()
 
     def StartNewGame(self):
