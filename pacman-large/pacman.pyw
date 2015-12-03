@@ -48,7 +48,6 @@ HS_ALPHA = 200
 # new constants for the score's position
 SCORE_XOFFSET = 50  # pixels from left edge
 SCORE_YOFFSET = 34  # pixels from bottom edge (to top of score)
-SCORE_COLWIDTH = 13  # width of each character
 
 # Joystick defaults - maybe add a Preferences dialog in the future?
 JS_DEVNUM = 0  # device 0 (pygame joysticks always start at 0). if JS_DEVNUM is not a valid device, will use 0
@@ -72,7 +71,7 @@ pygame.init()
 
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # change these to run in windowed mode
-DISPLAY_MODE_FLAGS = 0
+# DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -291,20 +290,49 @@ class game():
         self.score += amount
 
     def DrawScore(self):
-        self.DrawNumber(self.score, (SCORE_XOFFSET, self.screenSize[1] - SCORE_YOFFSET))
-        self.DrawNumber(self.score, (SCORE_XOFFSET, 0), flip_xy=True)
+        half_screen_w = thisGame.screenSize[0] / 2
+        third_screen_w = half_screen_w / 2
 
-        screen.blit(self.imScore, (250 + 56 + -120, self.screenSize[1] - 36))
-        screen.blit(self.imLives, (250 + 56 + 40, self.screenSize[1] - 36))
-        screen.blit(self.imPower, (250 + 56 + 180, self.screenSize[1] - 36))
+        score_title_w = self.imScore.get_size()[0]
+        score_title_y_pad = 35
+        score_base_x_bottom = half_screen_w - third_screen_w - score_title_w / 2
+        score_base_x_top = half_screen_w + third_screen_w - score_title_w / 2
+        screen.blit(self.imScore, (score_base_x_bottom, self.screenSize[1] - score_title_y_pad))
+        screen.blit(flip(self.imScore, True, True), (score_base_x_top, score_title_y_pad))
+        num_pos_bottom = score_base_x_bottom
+        self.DrawNumber(self.score, (num_pos_bottom, self.screenSize[1] - score_title_y_pad / 2))
+        num_pos_top = score_base_x_top - self.imNeg.get_size()[0] + score_title_w
+        self.DrawNumber(self.score, (num_pos_top, score_title_y_pad / 2), flip_xy=True)
 
-        screen.blit(flip(self.imScore, True, True), (250 + 56 + -120, 36))
-        screen.blit(flip(self.imLives, True, True), (250 + 56 + 40, 36))
-        screen.blit(flip(self.imPower, True, True), (250 + 56 + 180, 36))
+        lives_title_w = self.imLives.get_size()[0]
+        life_w = self.imLife .get_size()[0]
+        lives_base_x = half_screen_w - lives_title_w / 2
+        lives_title_y_pad = 35
+        screen.blit(self.imLives, (lives_base_x, self.screenSize[1] - lives_title_y_pad))
+        screen.blit(flip(self.imLives, True, True), (lives_base_x, lives_title_y_pad))
+        for i in range(self.lives):
+            life_pos = i * life_w
+            screen.blit(self.imLife, (life_pos + lives_base_x, self.screenSize[1] - lives_title_y_pad / 2))
+            life_pos *= -1
+            # crazy math that just works
+            life_pos -= life_w
+            life_pos += lives_title_w
+            screen.blit(flip(self.imLife, True, True), (life_pos + lives_base_x, lives_title_y_pad / 2))
 
-        for i in range(0, self.lives, 1):
-            screen.blit(self.imLife, (34 + i * 15 + 16 + 297, self.screenSize[1] - 17))
-            screen.blit(flip(self.imLife, True, True), (34 + i * 15 + 16 + 300, 17))
+        powers_title_w = self.imPower.get_size()[0]
+        pow_pel_w = self.imPowPel.get_size()[0]
+        powers_title_y_pad = 35
+        power_base_x_bottom = half_screen_w + third_screen_w - powers_title_w / 2
+        power_base_x_top = half_screen_w - third_screen_w - powers_title_w / 2
+        screen.blit(self.imPower, (power_base_x_bottom, self.screenSize[1] - powers_title_y_pad))
+        screen.blit(flip(self.imPower, True, True), (power_base_x_top, powers_title_y_pad))
+        for i in range(0, player.power_pellets):
+            pow_pel_pos = i * pow_pel_w
+            screen.blit(self.imPowPel, (pow_pel_pos + power_base_x_bottom, self.screenSize[1] - powers_title_y_pad / 2))
+            pow_pel_pos *= -1
+            pow_pel_pos -= pow_pel_w
+            pow_pel_pos += powers_title_w
+            screen.blit(self.imPowPel, (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
 
         # Draw fruit of this map:
         # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
@@ -312,29 +340,31 @@ class game():
         if self.mode == 3:
             # hack x.x
             if self.levelNum != 0 and thisGame.modeTimer >= 150:
-                screen.blit(self.imGameOver, (-270, 0))
+                GAME_OVER_BASE_X = -270
+                screen.blit(self.imGameOver, (GAME_OVER_BASE_X, 0))
 
         if self.mode == 4:
-            screen.blit(self.imReady, (self.screenSize[0] / 2 - 55, self.screenSize[1] / 2 + 12))
-
-        for i in range(0, player.power_pellets):
-            screen.blit(self.imPowPel, (250 + i * 20 + 56 + 180, self.screenSize[1] - 18))
-            screen.blit(self.imPowPel, (250 - (i * 20) + 280, 18))
+            READY_BASE_X = 55
+            READY_BASE_Y = 10
+            screen.blit(self.imReady, (self.screenSize[0] / 2 - READY_BASE_X, self.screenSize[1] / 2 + READY_BASE_Y))
 
     def DrawNumber(self, number, (x, y), flip_xy=False):
-        str_number = str(number)
-        for i in range(0, len(str(number))):
-            int_digit = int(str_number[i])
-            x_pos = i * SCORE_COLWIDTH
-            if flip_xy:
-                x_pos *= -1
-                x_pos += 22
-            screen.blit(flip(self.digit[int_digit], flip_xy, flip_xy), (x + x_pos + 145, y + 15))
         if self.score > 0:
-            x_pos = x - 4 + 135
-            if flip_xy:
-                x_pos += 50
-            screen.blit(self.imNeg, (x_pos, y + 15))
+            screen.blit(self.imNeg, (x, y))
+
+        str_number = str(number)
+        for i in range(len(str(number))):
+            int_digit = int(str_number[i])
+            digit_w = self.digit[int_digit].get_size()[0]
+            digit_pos = i * digit_w
+            if not flip_xy:
+                digit_pos += + self.imNeg.get_size()[0]
+                screen.blit(self.digit[int_digit], (digit_pos + x, y))
+            else:
+                digit_pos -= self.imNeg.get_size()[0]
+                digit_pos *= -1
+                digit_pos -= digit_w * 2
+                screen.blit(flip(self.digit[int_digit], flip_xy, flip_xy), (digit_pos + x, y))
 
     def SmartMoveScreen(self):
         # Comentando pra nao mover a tela automaticamente
