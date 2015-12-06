@@ -918,7 +918,7 @@ class PacMan:
                         if GHOSTS[g].state == 1:
                             GHOSTS[g].state = 2
             # otherwise, try to escape
-            elif dist < 100 and ghost.state != 2:
+            elif dist < 100 and ghost.state != 2 and not self.power_pellets:
                 if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0 and self.steps_to_change_path <= 0:
                     thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
             if thisLevel.CheckIfHit((self.x, self.y), (GHOSTS[i].x, GHOSTS[i].y), TILE_WIDTH / 2):
