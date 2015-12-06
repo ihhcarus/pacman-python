@@ -948,7 +948,7 @@ class PacMan:
         if thisGame.ghostTimer > 0:
             thisGame.ghostTimer -= 1
             if thisGame.ghostTimer == 0:
-                for i in range(0, GHOSTS_QTY, 1):
+                for i in range(GHOSTS_QTY):
                     if GHOSTS[i].state == 2:
                         GHOSTS[i].state = 1
                 thisGame.ghostValue = 0
@@ -957,6 +957,24 @@ class PacMan:
             # pacman is lined up with the grid again, meaning it's time to go to the next path item
             if len(self.currentPath) > 0:
                 self.currentPath = self.currentPath[1:]
+                if len(self.currentPath) > 0:
+                    check_row = self.nearest_row
+                    check_col = self.nearest_col
+                    if self.currentPath[0] == "L":
+                        check_col -= 1
+                    elif self.currentPath[0] == "R":
+                        check_col += 1
+                    elif self.currentPath[0] == "U":
+                        check_row -= 1
+                    elif self.currentPath[0] == "D":
+                        check_row += 1
+                    valid = [0, tileID['pellet'], tileID['pellet-power']]
+                    if thisLevel.GetMapTile((check_row, check_col)) not in valid:
+                        (rand_row, rand_col) = (0, 0)
+                        while not thisLevel.GetMapTile((rand_row, rand_col)) == tileID['pellet'] or (rand_row, rand_col) == (0, 0):
+                            rand_row = random.randint(1, thisLevel.lvlHeight - 2)
+                            rand_col = random.randint(1, thisLevel.lvlWidth - 2)
+                        self.currentPath = path.find_path((self.nearest_row, self.nearest_col), (rand_row, rand_col))
                 self.steps_to_change_path -= 1
             else:
                 self.x = self.nearest_col * TILE_WIDTH
