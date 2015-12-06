@@ -344,9 +344,8 @@ class game():
                 screen.blit(self.imGameOver, (GAME_OVER_BASE_X, 0))
 
         if self.mode == 4:
-            READY_BASE_X = 55
             READY_BASE_Y = 10
-            screen.blit(self.imReady, (self.screenSize[0] / 2 - READY_BASE_X, self.screenSize[1] / 2 + READY_BASE_Y))
+            screen.blit(self.imReady, (self.screenSize[0] / 2 - self.imReady.get_size()[0] / 2, self.screenSize[1] / 2 + READY_BASE_Y))
 
     def DrawNumber(self, number, (x, y), flip_xy=False):
         if self.score > 0:
