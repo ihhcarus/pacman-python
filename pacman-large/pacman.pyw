@@ -614,7 +614,7 @@ class ghost():
         self.y = 0
         self.vel_x = 0
         self.vel_y = 0
-        self.speed = 1
+        self.speed = 2
 
         self.nearest_row = 0
         self.nearest_col = 0
@@ -872,7 +872,7 @@ class PacMan:
         self.y = 0
         self.vel_x = 0
         self.vel_y = 0
-        self.speed = 3
+        self.speed = 4
 
         self.nearest_row = 0
         self.nearest_col = 0
@@ -1457,7 +1457,7 @@ class level():
             GHOSTS[i].vel_x = 0
             GHOSTS[i].vel_y = 0
             GHOSTS[i].state = 1
-            GHOSTS[i].speed = 1
+            GHOSTS[i].speed = 2
 
         thisFruit.active = False
 
@@ -1798,4 +1798,4 @@ while True:
 
     pygame.display.flip()
 
-    clock.tick(60)
+    clock.tick(30)
