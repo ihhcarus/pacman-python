@@ -64,7 +64,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = True
+MUTE_SOUNDS = False
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -72,7 +72,7 @@ pygame.init()
 # display setup
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # enable this to run in windowed mode
-DISPLAY_MODE_FLAGS = 0
+# DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -1639,9 +1639,6 @@ def GetCrossRef():
         lineNum += 1
 
 
-# __________________
-# ___/  main code block  \_____________________________________________________
-
 # create the pacman
 player = PacMan()
 
@@ -1680,7 +1677,7 @@ pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 while True:
     for event in pygame.event.get():
         pass
-    
+
     if thisGame.mode == 1:  # normal gameplay mode
         check_inputs()
 
