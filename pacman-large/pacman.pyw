@@ -267,10 +267,10 @@ class game():
         self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
         self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
-        self.imGhostRed = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert()
-        self.imGhostOrange = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert()
-        self.imGhostPink = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert()
-        self.imGhostBlue = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert()
+        self.imGhostRed = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert_alpha()
+        self.imGhostOrange = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
+        self.imGhostPink = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert_alpha()
+        self.imGhostBlue = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_blue.gif")).convert_alpha()
         self.imHiscores = self.makehiscorelist()
 
     def StartNewGame(self):
@@ -1564,7 +1564,7 @@ def check_inputs():
                 # we at gameover and will show the menu again
                 thisLevel.LoadLevel(0)
                 thisGame.levelNum = 0
-                screen.blit(thisGame.imLogo, (-255, 0))
+                #screen.blit(thisGame.imLogo, (-255, 0))
             else:
                 # we at menu and will start the game
                 thisGame.StartNewGame()
