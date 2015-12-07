@@ -69,9 +69,10 @@ MUTE_SOUNDS = True
 clock = pygame.time.Clock()
 pygame.init()
 
+# display setup
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
-# change these to run in windowed mode
-# DISPLAY_MODE_FLAGS = 0
+# enable this to run in windowed mode
+DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -80,6 +81,7 @@ screen = pygame.display.get_surface()
 
 img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
+# sound setup
 snd_pellet = {}
 snd_pellet[0] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav"))
 snd_pellet[1] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet2.wav"))
@@ -97,6 +99,7 @@ snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren
 GHOSTS_QTY = 4
 VULNERABLE_GHOST_ID = GHOSTS_QTY
 FLASHING_GHOST_ID = GHOSTS_QTY + 1
+VULNERABLE_TIMER = 200
 
 # ghosts controls setup
 CONTROLS_DEF = ['right', 'left', 'down', 'up', 'joystick_id']
@@ -117,6 +120,9 @@ ORANGE = (255, 128, 0, 255)
 BLUE_VULNERABLE = (50, 50, 255, 255)
 WHITE_FLASHING = (255, 255, 255, 255)
 GHOST_COLORS = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE, VULNERABLE_GHOST_ID: BLUE_VULNERABLE, FLASHING_GHOST_ID: WHITE_FLASHING}
+
+# pacman setup
+LIVES = 2
 
 # unused yet
 MODE_MENU_INTRO = 0
@@ -222,7 +228,7 @@ class game():
     def __init__(self):
         self.levelNum = 0
         self.score = 0
-        self.lives = 3
+        self.lives = LIVES
 
         # game "mode" variable
         # 1 = normal
@@ -270,7 +276,7 @@ class game():
     def StartNewGame(self):
         self.levelNum = 1
         self.score = 0
-        self.lives = 3
+        self.lives = LIVES
 
         self.SetMode(4)
         thisLevel.LoadLevel(thisGame.GetLevelNum())
@@ -397,7 +403,7 @@ class game():
     def SetNextLevel(self):
         self.levelNum += 1
 
-        self.lives = 3
+        self.lives = LIVES
 
         self.SetMode(4)
         thisLevel.LoadLevel(thisGame.GetLevelNum())
@@ -912,7 +918,7 @@ class PacMan:
                     pygame.mixer.stop()
                     play_sound(snd_powerpellet)
                     thisGame.ghostValue = 200
-                    thisGame.ghostTimer = 360
+                    thisGame.ghostTimer = VULNERABLE_TIMER
                     for g in range(0, GHOSTS_QTY, 1):
                         if GHOSTS[g].state == 1:
                             GHOSTS[g].state = 2
@@ -1525,12 +1531,6 @@ class level():
                         # print '       |-+but cant get there...'
 
 
-def CheckIfCloseButton(events):
-    for event in events:
-        if event.type == QUIT:
-            sys.exit(0)
-
-
 def check_inputs():
     if thisGame.mode == 1:
         for i in range(0, GHOSTS_QTY, 1):
@@ -1678,9 +1678,9 @@ thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
 while True:
-
-    CheckIfCloseButton(pygame.event.get())
-
+    for event in pygame.event.get():
+        pass
+    
     if thisGame.mode == 1:  # normal gameplay mode
         check_inputs()
 
@@ -1688,7 +1688,7 @@ while True:
 
         player.move()
 
-        for i in range(0, GHOSTS_QTY, 1):
+        for i in range(GHOSTS_QTY):
             GHOSTS[i].Move()
 
         thisFruit.Move()
@@ -1700,7 +1700,7 @@ while True:
             thisLevel.Restart()
 
             thisGame.lives -= 1
-            if thisGame.lives == -1:
+            if thisGame.lives == 0:
                 thisGame.updatehiscores(thisGame.score)
                 thisGame.SetMode(6)
                 thisGame.drawmidgamehiscores()
