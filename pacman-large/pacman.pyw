@@ -338,7 +338,7 @@ class game():
             pow_pel_pos *= -1
             pow_pel_pos -= pow_pel_w
             pow_pel_pos += powers_title_w
-            screen.blit(self.imPowPel, (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
+            screen.blit(flip(self.imPowPel, True, True), (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
 
         # Draw fruit of this map:
         # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
@@ -651,10 +651,10 @@ class ghost():
 
     def Draw(self):
 
-        # if thisGame.mode == 3:
-        #     return False
+        #if thisGame.mode == 3:
+        #    return False
 
-        # ghost eyes --
+        # ghost eyes -- comment in Mario Stage!
         for y in range(6, 12, 1):
             for x in [5, 6, 8, 9]:
                 self.anim[self.animFrame].set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
@@ -679,7 +679,7 @@ class ghost():
             for x in range(pupilSet[0], pupilSet[0] + 2, 1):
                 self.anim[self.animFrame].set_at((x, y), (0, 0, 255, 255))
                 self.anim[self.animFrame].set_at((x + 9, y), (0, 0, 255, 255))
-        # -- end ghost eyes
+        # -- end ghost eyes - end of comment for Mario Stage
 
         if self.state == 1:
             # draw regular ghost (this one)
@@ -1564,7 +1564,7 @@ def check_inputs():
                 # we at gameover and will show the menu again
                 thisLevel.LoadLevel(0)
                 thisGame.levelNum = 0
-                #screen.blit(thisGame.imLogo, (-255, 0))
+                screen.blit(thisGame.imLogo, (-255, 0))
             else:
                 # we at menu and will start the game
                 thisGame.StartNewGame()
