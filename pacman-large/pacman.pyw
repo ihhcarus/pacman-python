@@ -237,7 +237,7 @@ class Game:
             pow_pel_pos *= -1
             pow_pel_pos -= pow_pel_w
             pow_pel_pos += powers_title_w
-            screen.blit(self.imPowPel, (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
+            screen.blit(flip(self.imPowPel, True, True), (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
 
         # Draw fruit of this map:
         # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
@@ -545,7 +545,6 @@ class ghost():
             self.controls = build_controls(KEYS[self.id] + [None])
 
     def Draw(self):
-        # ghost eyes
         for y in range(6, 12, 1):
             for x in [5, 6, 8, 9]:
                 self.anim[self.animFrame].set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
