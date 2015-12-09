@@ -64,9 +64,10 @@ screen = pygame.display.get_surface()
 img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
 # sound setup
-snd_pellet = {}
-snd_pellet[0] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav"))
-snd_pellet[1] = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet2.wav"))
+snd_pellet = {
+    0: pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav")),
+    1: pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet2.wav"))
+}
 snd_powerpellet = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "powerpellet.wav"))
 snd_eatgh = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatgh2.wav"))
 snd_fruitbounce = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
@@ -78,11 +79,9 @@ snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.w
 snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
 
 # ghosts setup
-# thisGame.ghosts_quantity = 0
-# thisGame.vulnerable_ghost_id = thisGame.ghosts_quantity
-# thisGame.flashing_ghost_id = thisGame.ghosts_quantity + 1
+GHOST_REF_MIN = 10  # min value of cross ref for ghosts
+GHOST_REF_MAX = 13  # max value of cross ref for ghosts
 VULNERABLE_TIMER = 200
-# thisGame.ghosts = []  # ghost players will be stored here
 
 # ghosts controls setup
 CONTROLS_DEF = ['right', 'left', 'down', 'up', 'joystick']
@@ -660,7 +659,6 @@ class fruit():
 
         screen.blit(self.imFruit[self.fruitType], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1] - self.bounceY))
 
-
     def Move(self):
 
         if self.active == False:
@@ -830,6 +828,7 @@ class PacMan:
                 for i in range(thisGame.ghosts_quantity):
                     if thisGame.ghosts[i].state == 2:
                         thisGame.ghosts[i].state = 1
+                    snd_powerpellet.stop()
                 thisGame.ghostValue = 0
 
         if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
@@ -1015,7 +1014,6 @@ class level():
         return 0
 
     def IsWall(self, (row, col)):
-
         if row > thisLevel.lvlHeight - 1 or row < 0:
             return True
 
@@ -1032,7 +1030,6 @@ class level():
             return False
 
     def CheckIfHitWall(self, (possiblePlayerX, possiblePlayerY), (row, col)):
-
         numCollisions = 0
 
         # check each of the 9 surrounding tiles for a collision
@@ -1050,14 +1047,12 @@ class level():
             return False
 
     def CheckIfHit(self, (playerX, playerY), (x, y), cushion):
-
         if (playerX - x < cushion) and (playerX - x > -cushion) and (playerY - y < cushion) and (playerY - y > -cushion):
             return True
         else:
             return False
 
     def CheckIfHitSomething(self, (playerX, playerY), (row, col)):
-
         for iRow in range(row - 1, row + 2, 1):
             for iCol in range(col - 1, col + 2, 1):
 
@@ -1113,51 +1108,14 @@ class level():
                                         THE_PACMAN.y -= TILE_HEIGHT
 
     def GetGhostBoxPos(self):
-
         for row in range(0, self.lvlHeight, 1):
             for col in range(0, self.lvlWidth, 1):
                 if self.GetMapTile((row, col)) == tileID['ghost-door']:
-                    return (row, col)
-
-        return False
-
-    def GetPathwayPairPos(self):
-
-        doorArray = []
-
-        for row in range(0, self.lvlHeight, 1):
-            for col in range(0, self.lvlWidth, 1):
-                if self.GetMapTile((row, col)) == tileID['door-h']:
-                    # found a horizontal door
-                    doorArray.append((row, col))
-                elif self.GetMapTile((row, col)) == tileID['door-v']:
-                    # found a vertical door
-                    doorArray.append((row, col))
-
-        if len(doorArray) == 0:
-            return False
-
-        chosenDoor = random.randint(0, len(doorArray) - 1)
-
-        if self.GetMapTile(doorArray[chosenDoor]) == tileID['door-h']:
-            # horizontal door was chosen
-            # look for the opposite one
-            for i in range(0, thisLevel.lvlWidth, 1):
-                if not i == doorArray[chosenDoor][1]:
-                    if thisLevel.GetMapTile((doorArray[chosenDoor][0], i)) == tileID['door-h']:
-                        return doorArray[chosenDoor], (doorArray[chosenDoor][0], i)
-        else:
-            # vertical door was chosen
-            # look for the opposite one
-            for i in range(0, thisLevel.lvlHeight, 1):
-                if not i == doorArray[chosenDoor][0]:
-                    if thisLevel.GetMapTile((i, doorArray[chosenDoor][1])) == tileID['door-v']:
-                        return doorArray[chosenDoor], (i, doorArray[chosenDoor][1])
+                    return row, col
 
         return False
 
     def PrintMap(self):
-
         for row in range(0, self.lvlHeight, 1):
             outputLine = ""
             for col in range(0, self.lvlWidth, 1):
@@ -1174,7 +1132,9 @@ class level():
                 actualRow = thisGame.screenNearestTilePos[0] + row
                 actualCol = thisGame.screenNearestTilePos[1] + col
                 useTile = self.GetMapTile((actualRow, actualCol))
-                if not useTile == 0 and not useTile == tileID['door-h'] and not useTile == tileID['door-v']:
+                if not useTile == 0 and \
+                        not useTile == tileID['door-h'] and not useTile == tileID['door-v'] and \
+                        not (GHOST_REF_MIN <= useTile <= GHOST_REF_MAX):
                     # if this isn't a blank tile
                     if useTile == tileID['pellet-power']:
                         if self.powerPelletBlinkTimer < 30:
@@ -1187,7 +1147,6 @@ class level():
                         screen.blit(tileIDImage[useTile], (col * TILE_WIDTH - thisGame.screenPixelOffset[0], row * TILE_HEIGHT - thisGame.screenPixelOffset[1]))
 
     def LoadLevel(self, levelNum):
-
         self.map = {}
 
         self.pellets = 0
