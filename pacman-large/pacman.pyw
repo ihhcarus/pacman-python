@@ -46,7 +46,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = True
+MUTE_SOUNDS = False
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -54,7 +54,7 @@ pygame.init()
 # display setup
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # enable this to run in windowed mode
-DISPLAY_MODE_FLAGS = 0
+# DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -169,6 +169,8 @@ class Game:
         self.ghosts = []
         self.vulnerable_ghost_id = -1
         self.flashing_ghost_id = -1
+        self.vulnerable_ghost = None
+        self.flashing_ghost = None
         self.ghost_colors = {}
 
     def StartNewGame(self):
@@ -297,10 +299,10 @@ class Game:
     def setup_ghosts(self, players):
         self.ghosts_quantity = len(players)
         self.ghost_colors = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE}
-        self.vulnerable_ghost_id = len(self.ghost_colors.keys())
-        self.flashing_ghost_id = len(self.ghost_colors.keys()) + 1
-        self.ghost_colors[thisGame.vulnerable_ghost_id] = BLUE_VULNERABLE
-        self.ghost_colors[thisGame.flashing_ghost_id] = WHITE_FLASHING
+        self.vulnerable_ghost_id = players[-1] + 1
+        self.flashing_ghost_id = self.vulnerable_ghost_id + 1
+        self.ghost_colors[self.vulnerable_ghost_id] = BLUE_VULNERABLE
+        self.ghost_colors[self.flashing_ghost_id] = WHITE_FLASHING
         self.ghosts = []
         for player in players:
             g = ghost(player)
@@ -311,7 +313,8 @@ class Game:
                 pass
             g.controls = build_controls(KEYS[player], joystick)
             self.ghosts.append(g)
-        self.ghosts += [ghost(self.vulnerable_ghost_id), ghost(self.flashing_ghost_id)]
+        self.vulnerable_ghost = ghost(self.vulnerable_ghost_id)
+        self.flashing_ghost = ghost(self.flashing_ghost_id)
 
 
 class node():
@@ -568,13 +571,13 @@ class ghost():
             screen.blit(self.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 2:  # draw vulnerable ghost
             if thisGame.ghostTimer > 100:  # blue
-                screen.blit(thisGame.ghosts[thisGame.vulnerable_ghost_id].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                screen.blit(thisGame.vulnerable_ghost.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
             else:  # blue/white flashing
                 blink_timer = int(thisGame.ghostTimer / 10)
                 if blink_timer == 1 or blink_timer == 3 or blink_timer == 5 or blink_timer == 7 or blink_timer == 9:
-                    screen.blit(thisGame.ghosts[thisGame.flashing_ghost_id].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(thisGame.flashing_ghost.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
-                    screen.blit(thisGame.ghosts[thisGame.vulnerable_ghost_id].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(thisGame.vulnerable_ghost.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 3:  # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
 
@@ -1402,22 +1405,30 @@ def check_inputs():
 
 
 def check_events(event):
-    if event.type == KEYDOWN:
+    if event.type == KEYDOWN or event.type == JOYBUTTONDOWN:
         if thisGame.mode == 3:
             if thisGame.levelNum == 0:
                 # players joining and leaving
                 for idx, player in enumerate(JOIN_KEYS.items()):
                     key, image = player
-                    if pygame.key.get_pressed()[key]:
+                    joystick = None
+                    try:
+                        joystick = pygame.joystick.Joystick(idx)
+                        joystick.init()
+                    except pygame.error:
+                        pass
+                    if pygame.key.get_pressed()[key] or (joystick and joystick.get_button(JOYSTICK_JOIN_BUTTON)):
                         if PLAYERS[idx]:
                             PLAYERS[idx] = None
                         else:
                             PLAYERS[idx] = image
                 # start the game
                 if pygame.key.get_pressed()[pygame.K_RETURN]:
-                    thisGame.setup_ghosts([player for player, image in PLAYERS.items() if image])
-                    thisGame.StartNewGame()
-                    play_sound(snd_ready)
+                    players = [player for player, image in PLAYERS.items() if image]
+                    if len(players) > 0:  # only start with at least 1 player
+                        thisGame.setup_ghosts(players)
+                        thisGame.StartNewGame()
+                        play_sound(snd_ready)
 
 
 def build_controls(keys, joystick=None):
@@ -1486,6 +1497,13 @@ PLAYER_CYAN = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_
 PLAYER_ORANGE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
 PLAYER_NONE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_vulnerable.gif")).convert_alpha()
 JOIN_KEYS = {pygame.K_1: PLAYER_RED, pygame.K_2: PLAYER_PINK, pygame.K_3: PLAYER_CYAN, pygame.K_4: PLAYER_ORANGE}
+JOYSTICK_JOIN_BUTTON = 5
+JOYSTICKS = []
+for j in range(pygame.joystick.get_count()):
+    new_joystick = pygame.joystick.Joystick(j)
+    new_joystick.init()
+    JOYSTICKS.append(new_joystick)
+
 
 # create a path_finder object
 path = PathFinder()
