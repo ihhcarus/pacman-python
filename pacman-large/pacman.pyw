@@ -18,9 +18,7 @@
 #   Added constants TILE_WIDTH,TILE_HEIGHT to make this easier to change later.
 from collections import OrderedDict, namedtuple
 from math import sqrt
-
 from pygame.transform import flip
-
 import pygame, sys, os, random
 from pygame.locals import *
 
@@ -32,22 +30,6 @@ TILE_WIDTH = TILE_HEIGHT = 24
 # NO_GIF_TILES -- tile numbers which do not correspond to a GIF file
 # currently only "23" for the high-score list
 NO_GIF_TILES = [23]
-
-NO_WX = 1  # if set, the high-score code will not attempt to ask the user his name
-USER_NAME = "User"  # USER_NAME=os.getlogin() # the default user name if wx fails to load or NO_WX
-# Oops! os.getlogin() only works if you launch from a terminal
-# constants for the high-score display
-HS_FONT_SIZE = 14
-HS_LINE_HEIGHT = 16
-HS_WIDTH = 408
-HS_HEIGHT = 120
-HS_XOFFSET = 48
-HS_YOFFSET = 384
-HS_ALPHA = 200
-
-# new constants for the score's position
-SCORE_XOFFSET = 50  # pixels from left edge
-SCORE_YOFFSET = 34  # pixels from bottom edge (to top of score)
 
 # Joystick defaults - maybe add a Preferences dialog in the future?
 JS_DEVNUM = 0  # device 0 (pygame joysticks always start at 0). if JS_DEVNUM is not a valid device, will use 0
@@ -64,7 +46,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = False
+MUTE_SOUNDS = True
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -72,7 +54,7 @@ pygame.init()
 # display setup
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # enable this to run in windowed mode
-# DISPLAY_MODE_FLAGS = 0
+DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -96,20 +78,20 @@ snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.w
 snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
 
 # ghosts setup
-GHOSTS_QTY = 4
-VULNERABLE_GHOST_ID = GHOSTS_QTY
-FLASHING_GHOST_ID = GHOSTS_QTY + 1
+# thisGame.ghosts_quantity = 0
+# thisGame.vulnerable_ghost_id = thisGame.ghosts_quantity
+# thisGame.flashing_ghost_id = thisGame.ghosts_quantity + 1
 VULNERABLE_TIMER = 200
+# thisGame.ghosts = []  # ghost players will be stored here
 
 # ghosts controls setup
-CONTROLS_DEF = ['right', 'left', 'down', 'up', 'joystick_id']
+CONTROLS_DEF = ['right', 'left', 'down', 'up', 'joystick']
 Control = namedtuple("Control", CONTROLS_DEF)
-
-CONTROLS = [
-    [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP],
-    [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t],
+KEYS = [
     [pygame.K_d, pygame.K_a, pygame.K_s, pygame.K_w],
+    [pygame.K_h, pygame.K_f, pygame.K_g, pygame.K_t],
     [pygame.K_l, pygame.K_j, pygame.K_k, pygame.K_i],
+    [pygame.K_RIGHT, pygame.K_LEFT, pygame.K_DOWN, pygame.K_UP],
 ]
 
 # colors for the ghosts
@@ -119,7 +101,6 @@ CYAN = (128, 255, 255, 255)
 ORANGE = (255, 128, 0, 255)
 BLUE_VULNERABLE = (50, 50, 255, 255)
 WHITE_FLASHING = (255, 255, 255, 255)
-GHOST_COLORS = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE, VULNERABLE_GHOST_ID: BLUE_VULNERABLE, FLASHING_GHOST_ID: WHITE_FLASHING}
 
 # pacman setup
 LIVES = 2
@@ -141,90 +122,7 @@ def play_sound(snd, loops=0):
         snd.play(loops)
 
 
-# ___________________
-# ___/  class definitions  \_______________________________________________
-
-class game():
-    def defaulthiscorelist(self):
-        return [(100000, "David"), (80000, "Andy"), (60000, "Count Pacula"), (40000, "Cleopacra"), (20000, "Brett Favre"), (10000, "Sergei Pachmaninoff")]
-
-    def gethiscores(self):
-        """If res/hiscore.txt exists, read it. If not, return the default high scores.
-                   Output is [ (score,name) , (score,name) , .. ]. Always 6 entries."""
-        try:
-            f = open(os.path.join(SCRIPT_PATH, "res", "hiscore.txt"))
-            hs = []
-            for line in f:
-                while len(line) > 0 and (line[0] == "\n" or line[0] == "\r"): line = line[1:]
-                while len(line) > 0 and (line[-1] == "\n" or line[-1] == "\r"): line = line[:-1]
-                score = int(line.split(" ")[0])
-                name = line.partition(" ")[2]
-                if score > 99999999: score = 99999999
-                if len(name) > 22: name = name[:22]
-                hs.append((score, name))
-            f.close()
-            if len(hs) > 6: hs = hs[:6]
-            while len(hs) < 6: hs.append((0, ""))
-            return hs
-        except IOError:
-            return self.defaulthiscorelist()
-
-    def writehiscores(self, hs):
-        """Given a new list, write it to the default file."""
-        fname = os.path.join(SCRIPT_PATH, "res", "hiscore.txt")
-        f = open(fname, "w")
-        for line in hs:
-            f.write(str(line[0]) + " " + line[1] + "\n")
-        f.close()
-
-    def getplayername(self):
-        """Ask the player his name, to go on the high-score list."""
-        if NO_WX: return USER_NAME
-        try:
-            import wx
-        except:
-            print "Pacman Error: No module wx. Can not ask the user his name!"
-            print "     :(       Download wx from http://www.wxpython.org/"
-            print "     :(       To avoid seeing this error again, set NO_WX in file pacman.pyw."
-            return USER_NAME
-        app = wx.App(None)
-        dlog = wx.TextEntryDialog(None, "You made the high-score list! Name:")
-        dlog.ShowModal()
-        name = dlog.GetValue()
-        dlog.Destroy()
-        app.Destroy()
-        return name
-
-    def updatehiscores(self, newscore):
-        """Add newscore to the high score list, if appropriate."""
-        hs = self.gethiscores()
-        for line in hs:
-            if newscore >= line[0]:
-                hs.insert(hs.index(line), (newscore, self.getplayername()))
-                hs.pop(-1)
-                break
-        self.writehiscores(hs)
-
-    def makehiscorelist(self):
-        "Read the High-Score file and convert it to a useable Surface."
-        # My apologies for all the hard-coded constants.... -Andy
-        f = pygame.font.Font(os.path.join(SCRIPT_PATH, "res", "VeraMoBd.ttf"), HS_FONT_SIZE)
-        scoresurf = pygame.Surface((HS_WIDTH, HS_HEIGHT), pygame.SRCALPHA)
-        scoresurf.set_alpha(HS_ALPHA)
-        linesurf = f.render(" " * 18 + "HIGH SCORES", 1, (255, 255, 0))
-        scoresurf.blit(linesurf, (0, 0))
-        hs = self.gethiscores()
-        vpos = 0
-        for line in hs:
-            vpos += HS_LINE_HEIGHT
-            linesurf = f.render(line[1].rjust(22) + str(line[0]).rjust(9), 1, (255, 255, 255))
-            scoresurf.blit(linesurf, (0, vpos))
-        return scoresurf
-
-    def drawmidgamehiscores(self):
-        """Redraw the high-score list image after pacman dies."""
-        self.imHiscores = self.makehiscorelist()
-
+class Game:
     def __init__(self):
         self.levelNum = 0
         self.score = 0
@@ -267,11 +165,12 @@ class game():
         self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
         self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
-        self.imGhostRed = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert_alpha()
-        self.imGhostOrange = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
-        self.imGhostPink = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert_alpha()
-        self.imGhostBlue = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_blue.gif")).convert_alpha()
-        self.imHiscores = self.makehiscorelist()
+
+        self.ghosts_quantity = 0
+        self.ghosts = []
+        self.vulnerable_ghost_id = -1
+        self.flashing_ghost_id = -1
+        self.ghost_colors = {}
 
     def StartNewGame(self):
         self.levelNum = 1
@@ -311,7 +210,7 @@ class game():
         self.DrawNumber(self.score, (num_pos_top, score_title_y_pad / 2), flip_xy=True)
 
         lives_title_w = self.imLives.get_size()[0]
-        life_w = self.imLife .get_size()[0]
+        life_w = self.imLife.get_size()[0]
         lives_base_x = half_screen_w - lives_title_w / 2
         lives_title_y_pad = 35
         screen.blit(self.imLives, (lives_base_x, self.screenSize[1] - lives_title_y_pad))
@@ -332,7 +231,7 @@ class game():
         power_base_x_top = half_screen_w - third_screen_w - powers_title_w / 2
         screen.blit(self.imPower, (power_base_x_bottom, self.screenSize[1] - powers_title_y_pad))
         screen.blit(flip(self.imPower, True, True), (power_base_x_top, powers_title_y_pad))
-        for i in range(0, player.power_pellets):
+        for i in range(0, THE_PACMAN.power_pellets):
             pow_pel_pos = i * pow_pel_w
             screen.blit(self.imPowPel, (pow_pel_pos + power_base_x_bottom, self.screenSize[1] - powers_title_y_pad / 2))
             pow_pel_pos *= -1
@@ -371,29 +270,6 @@ class game():
                 digit_pos -= digit_w * 2
                 screen.blit(flip(self.digit[int_digit], flip_xy, flip_xy), (digit_pos + x, y))
 
-    def SmartMoveScreen(self):
-        # Comentando pra nao mover a tela automaticamente
-        return
-        possibleScreenX = player.x - self.screenTileSize[1] / 2 * TILE_WIDTH
-        possibleScreenY = player.y - self.screenTileSize[0] / 2 * TILE_HEIGHT
-
-        if possibleScreenX < 0:
-            possibleScreenX = 0
-        elif possibleScreenX > thisLevel.lvlWidth * TILE_WIDTH - self.screenSize[0]:
-            possibleScreenX = thisLevel.lvlWidth * TILE_HEIGHT - self.screenSize[0]
-
-        if possibleScreenY < 0:
-            possibleScreenY = 0
-        elif possibleScreenY > thisLevel.lvlHeight * TILE_WIDTH - self.screenSize[1]:
-            possibleScreenY = thisLevel.lvlHeight * TILE_HEIGHT - self.screenSize[1]
-
-        thisGame.MoveScreen((possibleScreenX, possibleScreenY))
-
-    def MoveScreen(self, (newX, newY)):
-        self.screenPixelPos = (newX, newY)
-        self.screenNearestTilePos = (int(newY / TILE_HEIGHT), int(newX / TILE_WIDTH))  # nearest-tile position of the screen from the UL corner
-        self.screenPixelOffset = (newX - self.screenNearestTilePos[1] * TILE_WIDTH, newY - self.screenNearestTilePos[0] * TILE_HEIGHT)
-
     def GetScreenPos(self):
         return self.screenPixelPos
 
@@ -411,13 +287,32 @@ class game():
         thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
         pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
-        player.vel_x = 0
-        player.vel_y = 0
-        player.anim_current = player.anim_stopped
+        THE_PACMAN.vel_x = 0
+        THE_PACMAN.vel_y = 0
+        THE_PACMAN.anim_current = THE_PACMAN.anim_stopped
 
     def SetMode(self, newMode):
         self.mode = newMode
         self.modeTimer = 0
+
+    def setup_ghosts(self, players):
+        self.ghosts_quantity = len(players)
+        self.ghost_colors = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE}
+        self.vulnerable_ghost_id = len(self.ghost_colors.keys())
+        self.flashing_ghost_id = len(self.ghost_colors.keys()) + 1
+        self.ghost_colors[thisGame.vulnerable_ghost_id] = BLUE_VULNERABLE
+        self.ghost_colors[thisGame.flashing_ghost_id] = WHITE_FLASHING
+        self.ghosts = []
+        for player in players:
+            g = ghost(player)
+            joystick = None
+            try:
+                joystick = pygame.joystick.Joystick(player)
+            except pygame.error:  # this joystick id is not connected
+                pass
+            g.controls = build_controls(KEYS[player], joystick)
+            self.ghosts.append(g)
+        self.ghosts += [ghost(self.vulnerable_ghost_id), ghost(self.flashing_ghost_id)]
 
 
 class node():
@@ -640,80 +535,60 @@ class ghost():
                 for x in range(0, TILE_WIDTH, 1):
                     if self.anim[i].get_at((x, y)) == RED:
                         # default, red ghost body color
-                        self.anim[i].set_at((x, y), GHOST_COLORS[self.id])
+                        self.anim[i].set_at((x, y), thisGame.ghost_colors[self.id])
 
         self.animFrame = 1
         self.animDelay = 0
 
         # default controls is just the keyboard, in main menu we add the joystick if it's available
-        if self.id < GHOSTS_QTY:  # no controls for vulnerable/white ghosts
-            self.controls = build_controls(CONTROLS[self.id] + [None])
+        if self.id < thisGame.ghosts_quantity:  # no controls for vulnerable/white ghosts
+            self.controls = build_controls(KEYS[self.id] + [None])
 
     def Draw(self):
-
-        # if thisGame.mode == 3:
-        #     return False
-
-        # ghost eyes --
+        # ghost eyes
         for y in range(6, 12, 1):
             for x in [5, 6, 8, 9]:
                 self.anim[self.animFrame].set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
                 self.anim[self.animFrame].set_at((x + 9, y), (0xf8, 0xf8, 0xf8, 255))
 
-        if player.x > self.x and player.y > self.y:
-            # player is to lower-right
+        if THE_PACMAN.x > self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-right
             pupilSet = (8, 9)
-        elif player.x < self.x and player.y > self.y:
-            # player is to lower-left
-            pupilSet = (5, 9)
-        elif player.x > self.x and player.y < self.y:
-            # player is to upper-right
+        elif THE_PACMAN.x > self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-right
             pupilSet = (8, 6)
-        elif player.x < self.x and player.y < self.y:
-            # player is to upper-left
+        elif THE_PACMAN.x < self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-left
             pupilSet = (5, 6)
-        else:
+        else:  # THE_PACMAN.x < self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-left
             pupilSet = (5, 9)
 
         for y in range(pupilSet[1], pupilSet[1] + 3, 1):
             for x in range(pupilSet[0], pupilSet[0] + 2, 1):
                 self.anim[self.animFrame].set_at((x, y), (0, 0, 255, 255))
                 self.anim[self.animFrame].set_at((x + 9, y), (0, 0, 255, 255))
-        # -- end ghost eyes
 
-        if self.state == 1:
-            # draw regular ghost (this one)
+        # ghost skin
+        if self.state == 1:  # draw regular ghost
             screen.blit(self.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-        elif self.state == 2:
-            # draw vulnerable ghost
-            if thisGame.ghostTimer > 100:
-                # blue
-                screen.blit(GHOSTS[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-            else:
-                # blue/white flashing
-                tempTimerI = int(thisGame.ghostTimer / 10)
-                if tempTimerI == 1 or tempTimerI == 3 or tempTimerI == 5 or tempTimerI == 7 or tempTimerI == 9:
-                    screen.blit(GHOSTS[FLASHING_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+        elif self.state == 2:  # draw vulnerable ghost
+            if thisGame.ghostTimer > 100:  # blue
+                screen.blit(thisGame.ghosts[thisGame.vulnerable_ghost_id].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+            else:  # blue/white flashing
+                blink_timer = int(thisGame.ghostTimer / 10)
+                if blink_timer == 1 or blink_timer == 3 or blink_timer == 5 or blink_timer == 7 or blink_timer == 9:
+                    screen.blit(thisGame.ghosts[thisGame.flashing_ghost_id].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
-                    screen.blit(GHOSTS[VULNERABLE_GHOST_ID].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
-        elif self.state == 3:
-            # draw glasses
+                    screen.blit(thisGame.ghosts[thisGame.vulnerable_ghost_id].anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+        elif self.state == 3:  # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
 
-        if thisGame.mode == 6 or thisGame.mode == 7:
-            # don't animate ghost if the level is complete
-            return False
-
-        self.animDelay += 1
-
-        if self.animDelay == 2:
-            self.animFrame += 1
-
-            if self.animFrame == 7:
-                # wrap to beginning
-                self.animFrame = 1
-
-            self.animDelay = 0
+        if thisGame.mode == 6 or thisGame.mode == 7:  # don't animate ghost if the level is complete
+            pass
+        else:
+            self.animDelay += 1
+            if self.animDelay == 2:
+                self.animFrame += 1
+                if self.animFrame == 7:  # wrap to beginning
+                    self.animFrame = 1
+                self.animDelay = 0
 
     def Move(self):
         if self.state == 1 or self.state == 2:
@@ -737,8 +612,8 @@ class ghost():
                 else:
                     self.speed /= 4
                     self.state = 1
-                    for i in range(0, len(GHOSTS)):
-                        if GHOSTS[i].state == 3:
+                    for i in range(len(thisGame.ghosts)):
+                        if thisGame.ghosts[i].state == 3:
                             return
                     snd_eyes.stop()
 
@@ -908,8 +783,8 @@ class PacMan:
         self.nearest_col = int(((self.x + (TILE_HEIGHT / 2)) / TILE_WIDTH))
 
         thisLevel.CheckIfHitSomething((self.x, self.y), (self.nearest_row, self.nearest_col))
-        for i in range(0, len(GHOSTS)):
-            ghost = GHOSTS[i]
+        for i in range(0, len(thisGame.ghosts)):
+            ghost = thisGame.ghosts[i]
             dist = sqrt(pow(self.x - ghost.x, 2) + pow(self.y - ghost.y, 2))
             # if we get to close to ghosts, use a power pellet to smash them >:D
             if dist < 15 and ghost.state == 1:
@@ -919,33 +794,33 @@ class PacMan:
                     play_sound(snd_powerpellet)
                     thisGame.ghostValue = 200
                     thisGame.ghostTimer = VULNERABLE_TIMER
-                    for g in range(0, GHOSTS_QTY, 1):
-                        if GHOSTS[g].state == 1:
-                            GHOSTS[g].state = 2
+                    for g in range(0, thisGame.ghosts_quantity, 1):
+                        if thisGame.ghosts[g].state == 1:
+                            thisGame.ghosts[g].state = 2
             # otherwise, try to escape
             elif dist < 100 and ghost.state != 2 and not self.power_pellets:
                 if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0 and self.steps_to_change_path <= 0:
                     thisLevel.get_quadrant(ghost.nearest_col, ghost.nearest_row, self.nearest_col, self.nearest_row)
-            if thisLevel.CheckIfHit((self.x, self.y), (GHOSTS[i].x, GHOSTS[i].y), TILE_WIDTH / 2):
-                if GHOSTS[i].state == 1:
+            if thisLevel.CheckIfHit((self.x, self.y), (thisGame.ghosts[i].x, thisGame.ghosts[i].y), TILE_WIDTH / 2):
+                if thisGame.ghosts[i].state == 1:
                     # ghost is normal, pacman dies
                     play_sound(snd_killpac)
                     snd_eyes.stop()
                     thisGame.SetMode(2)
-                elif GHOSTS[i].state == 2:
+                elif thisGame.ghosts[i].state == 2:
                     # ghost is vulnerable, ghost dies
                     thisGame.AddToScore(thisGame.ghostValue)
                     thisGame.ghostValue = thisGame.ghostValue * 2
                     play_sound(snd_eatgh)
-                    GHOSTS[i].state = 3
-                    GHOSTS[i].speed = GHOSTS[i].speed * 4
+                    thisGame.ghosts[i].state = 3
+                    thisGame.ghosts[i].speed = thisGame.ghosts[i].speed * 4
                     snd_eyes.stop()
                     play_sound(snd_eyes, loops=-1)
                     # and send them to the ghost box
-                    GHOSTS[i].x = GHOSTS[i].nearest_col * TILE_WIDTH
-                    GHOSTS[i].y = GHOSTS[i].nearest_row * TILE_HEIGHT
-                    GHOSTS[i].currentPath = path.find_path((GHOSTS[i].nearest_row, GHOSTS[i].nearest_col), (thisLevel.GetGhostBoxPos()[0], thisLevel.GetGhostBoxPos()[1]))
-                    GHOSTS[i].FollowNextPathWay()
+                    thisGame.ghosts[i].x = thisGame.ghosts[i].nearest_col * TILE_WIDTH
+                    thisGame.ghosts[i].y = thisGame.ghosts[i].nearest_row * TILE_HEIGHT
+                    thisGame.ghosts[i].currentPath = path.find_path((thisGame.ghosts[i].nearest_row, thisGame.ghosts[i].nearest_col), (thisLevel.GetGhostBoxPos()[0], thisLevel.GetGhostBoxPos()[1]))
+                    thisGame.ghosts[i].FollowNextPathWay()
                     # set game mode to brief pause after eating
                     thisGame.SetMode(5)
 
@@ -953,9 +828,9 @@ class PacMan:
         if thisGame.ghostTimer > 0:
             thisGame.ghostTimer -= 1
             if thisGame.ghostTimer == 0:
-                for i in range(GHOSTS_QTY):
-                    if GHOSTS[i].state == 2:
-                        GHOSTS[i].state = 1
+                for i in range(thisGame.ghosts_quantity):
+                    if thisGame.ghosts[i].state == 2:
+                        thisGame.ghosts[i].state = 1
                 thisGame.ghostValue = 0
 
         if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
@@ -1194,8 +1069,8 @@ class level():
                     if result == tileID['pellet']:
                         # got a pellet
                         thisLevel.SetMapTile((iRow, iCol), 0)
-                        play_sound(snd_pellet[player.pellet_snd_num])
-                        player.pellet_snd_num = 1 - player.pellet_snd_num
+                        play_sound(snd_pellet[THE_PACMAN.pellet_snd_num])
+                        THE_PACMAN.pellet_snd_num = 1 - THE_PACMAN.pellet_snd_num
 
                         thisLevel.pellets -= 1
 
@@ -1210,7 +1085,7 @@ class level():
 
                     elif result == tileID['pellet-power']:
                         # pacman got a power pellet, store it to use later
-                        player.power_pellets += 1
+                        THE_PACMAN.power_pellets += 1
                         thisLevel.SetMapTile((iRow, iCol), 0)
                         thisGame.AddToScore(100)
 
@@ -1219,24 +1094,24 @@ class level():
                         for i in range(0, thisLevel.lvlWidth, 1):
                             if not i == iCol:
                                 if thisLevel.GetMapTile((iRow, i)) == tileID['door-h']:
-                                    player.x = i * TILE_WIDTH
+                                    THE_PACMAN.x = i * TILE_WIDTH
 
-                                    if player.vel_x > 0:
-                                        player.x += TILE_WIDTH
+                                    if THE_PACMAN.vel_x > 0:
+                                        THE_PACMAN.x += TILE_WIDTH
                                     else:
-                                        player.x -= TILE_WIDTH
+                                        THE_PACMAN.x -= TILE_WIDTH
 
                     elif result == tileID['door-v']:
                         # ran into a vertical door
                         for i in range(0, thisLevel.lvlHeight, 1):
                             if not i == iRow:
                                 if thisLevel.GetMapTile((i, iCol)) == tileID['door-v']:
-                                    player.y = i * TILE_HEIGHT
+                                    THE_PACMAN.y = i * TILE_HEIGHT
 
-                                    if player.vel_y > 0:
-                                        player.y += TILE_HEIGHT
+                                    if THE_PACMAN.vel_y > 0:
+                                        THE_PACMAN.y += TILE_HEIGHT
                                     else:
-                                        player.y -= TILE_HEIGHT
+                                        THE_PACMAN.y -= TILE_HEIGHT
 
     def GetGhostBoxPos(self):
 
@@ -1410,15 +1285,15 @@ class level():
                         if thisID == 4:
                             # starting position for pac-man
 
-                            player.home_x = k * TILE_WIDTH
-                            player.home_y = rowNum * TILE_HEIGHT
+                            THE_PACMAN.home_x = k * TILE_WIDTH
+                            THE_PACMAN.home_y = rowNum * TILE_HEIGHT
                             self.SetMapTile((rowNum, k), 0)
 
                         elif thisID >= 10 and thisID <= 13:
                             # one of the ghosts
                             try:
-                                GHOSTS[thisID - 10].homeX = k * TILE_WIDTH
-                                GHOSTS[thisID - 10].homeY = rowNum * TILE_HEIGHT
+                                thisGame.ghosts[thisID - 10].homeX = k * TILE_WIDTH
+                                thisGame.ghosts[thisID - 10].homeY = rowNum * TILE_HEIGHT
                                 self.SetMapTile((rowNum, k), 0)
                             except:
                                 pass
@@ -1450,28 +1325,28 @@ class level():
         self.Restart()
 
     def Restart(self):
-        for i in range(0, GHOSTS_QTY, 1):
+        for i in range(0, thisGame.ghosts_quantity, 1):
             # move ghosts back to home
-            GHOSTS[i].x = GHOSTS[i].homeX
-            GHOSTS[i].y = GHOSTS[i].homeY
-            GHOSTS[i].vel_x = 0
-            GHOSTS[i].vel_y = 0
-            GHOSTS[i].state = 1
-            GHOSTS[i].speed = 2
+            thisGame.ghosts[i].x = thisGame.ghosts[i].homeX
+            thisGame.ghosts[i].y = thisGame.ghosts[i].homeY
+            thisGame.ghosts[i].vel_x = 0
+            thisGame.ghosts[i].vel_y = 0
+            thisGame.ghosts[i].state = 1
+            thisGame.ghosts[i].speed = 2
 
         thisFruit.active = False
 
         thisGame.fruitTimer = 0
 
-        player.x = player.home_x
-        player.y = player.home_y
-        player.vel_x = 0
-        player.vel_y = 0
+        THE_PACMAN.x = THE_PACMAN.home_x
+        THE_PACMAN.y = THE_PACMAN.home_y
+        THE_PACMAN.vel_x = 0
+        THE_PACMAN.vel_y = 0
 
-        player.anim_current = player.anim_stopped
-        player.animFrame = 3
+        THE_PACMAN.anim_current = THE_PACMAN.anim_stopped
+        THE_PACMAN.animFrame = 3
 
-        player.power_pellets = 0
+        THE_PACMAN.power_pellets = 0
 
     def get_quadrant(self, ghost_x, ghost_y, player_x, player_y):
         actual_ghost_pos_x = ghost_x - self.pad_w
@@ -1504,7 +1379,7 @@ class level():
                 else:  # condition: "in_c1 and in_l1":
                     we_at = "in_c1 and in_l1"
                     possible_quadrants = quadrants_mapping[3]
-                # print '-+player at Y:%sxX:%s, ghost at Y:%sxX:%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
+                # print '-+THE_PACMAN at Y:%sxX:%s, ghost at Y:%sxX:%s aka %s' % (actual_player_pos_y, actual_player_pos_x, actual_ghost_pos_y, actual_ghost_pos_x, we_at)
                 # print ' |-+we can go to: ' + str(possible_quadrants)
                 go_to_quadrant = random.choice(possible_quadrants)
                 # print '   |-+but we will go to: %s with padding %s' % (str(go_to_quadrant), str((self.pad_h, self.pad_w)))
@@ -1520,11 +1395,11 @@ class level():
                     pass
                     # print '     |-+nao achei nada'
                 else:
-                    # print '     |-+more specifically, col%dxrow%d from col%dxrow%d' % (go_to_col, go_to_row, player.nearest_col, player.nearest_row)
-                    next_path = path.find_path((player.nearest_row, player.nearest_col), (go_to_row + self.pad_h, go_to_col + self.pad_w))
+                    # print '     |-+more specifically, col%dxrow%d from col%dxrow%d' % (go_to_col, go_to_row, THE_PACMAN.nearest_col, THE_PACMAN.nearest_row)
+                    next_path = path.find_path((THE_PACMAN.nearest_row, THE_PACMAN.nearest_col), (go_to_row + self.pad_h, go_to_col + self.pad_w))
                     if next_path:
-                        player.currentPath = next_path[0] + next_path
-                        player.steps_to_change_path = 2
+                        THE_PACMAN.currentPath = next_path[0] + next_path
+                        THE_PACMAN.steps_to_change_path = 2
                         # print '       |-+with path: %s' % next_path
                     else:
                         pass
@@ -1533,10 +1408,10 @@ class level():
 
 def check_inputs():
     if thisGame.mode == 1:
-        for i in range(0, GHOSTS_QTY, 1):
-            ghost = GHOSTS[i]
+        for i in range(0, thisGame.ghosts_quantity, 1):
+            ghost = thisGame.ghosts[i]
             controls = ghost.controls
-            js = JOYSTICKS[controls.joystick_id] if controls.joystick_id is not None else None
+            js = controls.joystick
             if ghost.state != 3:  # Can't move manually if the ghost is returning to the box
                 # right
                 if pygame.key.get_pressed()[controls.right] or (js and js.get_axis(JS_XAXIS) > 0.5):
@@ -1561,32 +1436,35 @@ def check_inputs():
     elif thisGame.mode == 3:
         if pygame.key.get_pressed()[pygame.K_RETURN]:
             if thisGame.levelNum != 0:
-                # we at gameover and will show the menu again
+                # we at game over and will show the menu again
                 thisLevel.LoadLevel(0)
                 thisGame.levelNum = 0
-                #screen.blit(thisGame.imLogo, (-255, 0))
-            else:
-                # we at menu and will start the game
-                thisGame.StartNewGame()
-                play_sound(snd_ready)
-        # map available joysticks to matching ghost (by id)
-        for j_id, joystick in enumerate(JOYSTICKS):
-            if joystick.get_button(5):
-                for ghost in GHOSTS:
-                    if ghost.id == j_id:
-                        if ghost.controls.joystick_id is None:
-                            control1 = build_controls(CONTROLS[j_id] + [j_id])
-                            ghost.controls = control1
     if pygame.key.get_pressed()[pygame.K_F5]:
         sys.exit(0)
 
 
-def build_controls(controls_list):
-    return Control(**{name: control for name, control in zip(CONTROLS_DEF, controls_list)})
+def check_events(event):
+    if event.type == KEYDOWN:
+        if thisGame.mode == 3:
+            if thisGame.levelNum == 0:
+                # players joining and leaving
+                for idx, player in enumerate(JOIN_KEYS.items()):
+                    key, image = player
+                    if pygame.key.get_pressed()[key]:
+                        if PLAYERS[idx]:
+                            PLAYERS[idx] = None
+                        else:
+                            PLAYERS[idx] = image
+                # start the game
+                if pygame.key.get_pressed()[pygame.K_RETURN]:
+                    thisGame.setup_ghosts([player for player, image in PLAYERS.items() if image])
+                    thisGame.StartNewGame()
+                    play_sound(snd_ready)
 
 
-# _____________________________________________
-# ___/  function: Get ID-Tilename Cross References  \______________________________________
+def build_controls(keys, joystick=None):
+    return Control(**{name: control for name, control in zip(CONTROLS_DEF, keys + [joystick])})
+
 
 def GetCrossRef():
     f = open(os.path.join(SCRIPT_PATH, "res", "crossref.txt"), 'r')
@@ -1640,24 +1518,19 @@ def GetCrossRef():
 
 
 # create the pacman
-player = PacMan()
+THE_PACMAN = PacMan()
+
+# players indicators
+PLAYERS = OrderedDict({0: None, 1: None, 2: None, 3: None})
+PLAYER_RED = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert_alpha()
+PLAYER_PINK = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert_alpha()
+PLAYER_CYAN = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_blue.gif")).convert_alpha()
+PLAYER_ORANGE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
+PLAYER_NONE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_vulnerable.gif")).convert_alpha()
+JOIN_KEYS = {pygame.K_1: PLAYER_RED, pygame.K_2: PLAYER_PINK, pygame.K_3: PLAYER_CYAN, pygame.K_4: PLAYER_ORANGE}
 
 # create a path_finder object
 path = PathFinder()
-
-# setup joysticks
-JOYSTICKS = []
-joystick_count = pygame.joystick.get_count()
-for j in range(joystick_count):
-    new_joystick = pygame.joystick.Joystick(j)
-    new_joystick.init()
-    JOYSTICKS.append(new_joystick)
-
-# create ghosts
-GHOSTS = []
-for g_id in range(GHOSTS_QTY):
-    GHOSTS.append(ghost(g_id))
-GHOSTS += [ghost(VULNERABLE_GHOST_ID), ghost(FLASHING_GHOST_ID)]
 
 # create piece of fruit
 thisFruit = fruit()
@@ -1667,7 +1540,7 @@ tileID = {}  # gives tile ID (when the name is known)
 tileIDImage = {}  # gives tile image (when the ID# is known)
 
 # create game and level objects and load first level
-thisGame = game()
+thisGame = Game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
 
@@ -1676,17 +1549,17 @@ pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
 while True:
     for event in pygame.event.get():
-        pass
+        check_events(event)
 
     if thisGame.mode == 1:  # normal gameplay mode
         check_inputs()
 
         thisGame.modeTimer += 1
 
-        player.move()
+        THE_PACMAN.move()
 
-        for i in range(GHOSTS_QTY):
-            GHOSTS[i].Move()
+        for i in range(thisGame.ghosts_quantity):
+            thisGame.ghosts[i].Move()
 
         thisFruit.Move()
 
@@ -1698,9 +1571,7 @@ while True:
 
             thisGame.lives -= 1
             if thisGame.lives == 0:
-                thisGame.updatehiscores(thisGame.score)
                 thisGame.SetMode(6)
-                thisGame.drawmidgamehiscores()
             else:
                 thisGame.SetMode(4)
 
@@ -1772,8 +1643,6 @@ while True:
         if thisGame.modeTimer == 10:
             thisGame.SetNextLevel()
 
-    thisGame.SmartMoveScreen()
-
     screen.blit(img_Background, (0, 0))
 
     if not thisGame.mode == 8:
@@ -1784,17 +1653,23 @@ while True:
                 thisGame.DrawNumber(2500, (thisFruit.x - thisGame.screenPixelPos[0] - 16, thisFruit.y - thisGame.screenPixelPos[1] + 4))
 
         if thisGame.levelNum != 0:
-            for i in range(0, GHOSTS_QTY, 1):
-                GHOSTS[i].Draw()
+            for i in range(thisGame.ghosts_quantity):
+                thisGame.ghosts[i].Draw()
 
             thisFruit.Draw()
 
-            player.draw()
+            THE_PACMAN.draw()
 
     if thisGame.mode == 5:
-            thisGame.DrawNumber(thisGame.ghostValue / 2, (player.x - thisGame.screenPixelPos[0] - 4, player.y - thisGame.screenPixelPos[1] + 6))
+        thisGame.DrawNumber(thisGame.ghostValue / 2, (THE_PACMAN.x - thisGame.screenPixelPos[0] - 4, THE_PACMAN.y - thisGame.screenPixelPos[1] + 6))
 
     thisGame.DrawScore()
+
+    for idx, player_img in enumerate(PLAYERS.values(), 1):
+        if player_img:
+            screen.blit(player_img, (100 * idx, 100))
+        else:
+            screen.blit(PLAYER_NONE, (100 * idx, 100))
 
     pygame.display.flip()
 
