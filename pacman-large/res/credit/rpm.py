@@ -4,16 +4,18 @@
 from pygame import *
 from credit import credit
 
-display.set_mode((800,500))
+#display.set_mode((800,500))
+display.set_mode((1280,768))
 
 text = """REVERSE PAC-MAN
 _                                                 _
 
-_Developed by_\\Aeroli.to
+Developed by\\Aeroli.to
 
-_Lead programmer_\\Icaro Raupp Henrique
+Programmers\\Icaro Raupp Henrique
+\\Igor H. de Oliveira
 
-_GitHub_\\github.com/iraupph/pacman-python
+GitHub\\github.com/iraupph/pacman-python
 
 
 Adapted from David Reilly’s Pac-Man Python Project
@@ -30,11 +32,11 @@ Released in November 21, 1990 (Japan)
 
 _                                                 _
 
-Have you heard about Konami Code? ;)"""
+Have you heard about Konami Code?"""
 
-#~ utiliser '\\' pour aligner les lignes de texte
 
-font = font.Font("Roboto-MediumItalic.ttf",20)
+#font = font.Font("Roboto-MediumItalic.ttf",20)
+font = font.Font("webpixel-bitmap_bold.otf",40)
 color = 0xa0a0a000
 
 credit(text,font,color)
