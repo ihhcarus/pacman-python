@@ -4,7 +4,14 @@
 from pygame import *
 from credit import credit
 
+from pygame.transform import flip
+import pygame, sys, os, random
+from pygame.locals import *
+
+SCRIPT_PATH = sys.path[0]
+
 #display.set_mode((800,500))
+#display.set_mode((1280,768), FULLSCREEN)
 display.set_mode((1280,768))
 
 text = """REVERSE PAC-MAN
@@ -38,5 +45,7 @@ Have you heard about Konami Code?"""
 #font = font.Font("Roboto-MediumItalic.ttf",20)
 font = font.Font("webpixel-bitmap_bold.otf",40)
 color = 0xa0a0a000
+image1 = image.load(os.path.join(SCRIPT_PATH, "pac2.gif")).convert_alpha()
+image2 = image.load(os.path.join(SCRIPT_PATH, "picture2.gif")).convert_alpha()
 
-credit(text,font,color)
+credit(text,font,color,image1,image2)

@@ -4,7 +4,7 @@
 from pygame import *
 font.init()
 
-def credit(text,font,color):
+def credit(text,font,color,image1, image2):
 
     try: text = text.decode('utf-8')
     except: pass
@@ -15,13 +15,15 @@ def credit(text,font,color):
     clk = time.Clock()
 
     scr = display.get_surface()
+    scr_w = scr.get_size()[0]
+    image1_w = image1.get_size()[0]
+    image2_w = image2.get_size()[0]
     scrrect = scr.get_rect()
     bg = scr.copy()
 
     w,h = font.size(' ')
     Rright = scrrect.centerx + w*3
     Rleft = scrrect.centerx - w*3
-
 
     foo = []
     for i,l in enumerate(text.splitlines()):
@@ -63,6 +65,8 @@ def credit(text,font,color):
         clk.tick(40)
         display.flip()
         scr.blit(bg,(0,0))
+        scr.blit(image1,(scr_w/2 - image1_w/2,y+650))
+        scr.blit(image2,(scr_w/2 - image2_w/2,y+1875))
 
     display.flip()
 
