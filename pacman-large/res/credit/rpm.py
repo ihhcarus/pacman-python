@@ -17,12 +17,35 @@ display.set_mode((1280,768))
 text = """REVERSE PAC-MAN
 _                                                 _
 
-Developed by\\Aeroli.to
+Developed by Aeroli.to
 
-Programmers\\Icaro Raupp Henrique
-\\Igor H. de Oliveira
+Mothafucker software engineer / Lead programmer
 
-GitHub\\github.com/iraupph/pacman-python
+
+
+
+\\Icaro Raupp Henrique
+
+
+
+
+
+
+Programmer
+
+
+
+
+
+Igor H. de Oliveira\\
+
+
+
+
+
+
+Source code at:
+https://github.com/iraupph/pacman-python
 
 
 Adapted from David Reilly’s Pac-Man Python Project
@@ -45,7 +68,8 @@ Have you heard about Konami Code?"""
 #font = font.Font("Roboto-MediumItalic.ttf",20)
 font = font.Font("webpixel-bitmap_bold.otf",40)
 color = 0xa0a0a000
-image1 = image.load(os.path.join(SCRIPT_PATH, "pac2.gif")).convert_alpha()
-image2 = image.load(os.path.join(SCRIPT_PATH, "picture2.gif")).convert_alpha()
+image1 = image.load(os.path.join(SCRIPT_PATH, "pac.gif")).convert_alpha()
+image2 = image.load(os.path.join(SCRIPT_PATH, "picture1.gif")).convert_alpha()
+image3 = image.load(os.path.join(SCRIPT_PATH, "picture2.gif")).convert_alpha()
 
-credit(text,font,color,image1,image2)
+credit(text,font,color,image1,image2,image3)
