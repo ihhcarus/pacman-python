@@ -1641,11 +1641,21 @@ while True:
 
     thisGame.DrawScore()
 
-    for idx, player_img in enumerate(PLAYERS.values(), 1):
-        if player_img:
-            screen.blit(player_img, (100 * idx, 100))
-        else:
-            screen.blit(PLAYER_NONE, (100 * idx, 100))
+    if thisGame.levelNum == 0:
+        quarter_screen_w = thisGame.screenSize[0] / 4
+        eighth_screen_w = quarter_screen_w / 2
+        for idx, player_img in enumerate(PLAYERS.values(), 1):
+            if player_img is None:
+                player_img = PLAYER_NONE
+            player_w = player_img.get_size()[0]
+            player_h = player_img.get_size()[1]
+            player_base_x_top = eighth_screen_w + player_w / 2
+            player_base_x_bottom = eighth_screen_w - player_w / 2
+            player_y_pad = 128
+            player_pos = idx * quarter_screen_w
+            player_pos_bottom = (4 - idx) * quarter_screen_w
+            screen.blit(player_img, (player_pos - player_base_x_top, thisGame.screenSize[1] - player_y_pad))
+            screen.blit(flip(player_img, True, True), (player_pos_bottom + player_base_x_bottom, player_y_pad - player_h / 2))
 
     pygame.display.flip()
 
