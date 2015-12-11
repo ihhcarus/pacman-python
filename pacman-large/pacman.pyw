@@ -81,6 +81,7 @@ KEYS = [
 ]
 
 # colors for the ghosts
+TRANSPARENT = (0, 0, 0, 0)
 RED = (255, 0, 0, 255)
 PINK = (255, 128, 255, 255)
 CYAN = (128, 255, 255, 255)
@@ -152,6 +153,8 @@ class Game:
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
         self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
 
+        self.ready_border = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready_border.gif")).convert_alpha()
+
         self.controls_pressed_right_image = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "controls-p-r.gif")).convert_alpha()
         self.controls_pressed_left_image = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "controls-p-l.gif")).convert_alpha()
 
@@ -161,7 +164,7 @@ class Game:
         self.flashing_ghost_id = -1
         self.vulnerable_ghost = None
         self.flashing_ghost = None
-        self.ghost_colors = {}
+        self.ghost_colors = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE}
 
     def StartNewGame(self):
         self.levelNum = 1
@@ -288,7 +291,6 @@ class Game:
 
     def setup_ghosts(self, players):
         self.ghosts_quantity = len(players)
-        self.ghost_colors = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE}
         self.vulnerable_ghost_id = players[-1] + 1
         self.flashing_ghost_id = self.vulnerable_ghost_id + 1
         self.ghost_colors[self.vulnerable_ghost_id] = BLUE_VULNERABLE
@@ -1408,13 +1410,18 @@ def check_events(event):
                     except pygame.error:
                         pass
                     if pygame.key.get_pressed()[key] or (joystick and joystick.get_button(JOYSTICK_JOIN_BUTTON)):
-                        if PLAYERS[idx]:
-                            PLAYERS[idx] = None
+                        if PLAYERS_JOINED[idx]:
+                            PLAYERS_JOINED[idx] = None
+                            PLAYERS_READY[idx] = False  # if a player leaves also un-ready him
                         else:
-                            PLAYERS[idx] = image
+                            PLAYERS_JOINED[idx] = image
+                    keys = KEYS[idx]
+                    if pygame.key.get_pressed()[keys[3]] or (joystick and joystick.get_button(JOYSTICK_START_BUTTON)):  # ready on up pressed
+                        if PLAYERS_JOINED[idx]:
+                            PLAYERS_READY[idx] = not PLAYERS_READY[idx]
                 # start the game
                 if pygame.key.get_pressed()[pygame.K_RETURN]:
-                    players = [player for player, image in PLAYERS.items() if image]
+                    players = [player for player, image in PLAYERS_JOINED.items() if image]
                     if len(players) > 0:  # only start with at least 1 player
                         thisGame.setup_ghosts(players)
                         thisGame.StartNewGame()
@@ -1467,13 +1474,15 @@ def load_cross_reference():
 THE_PACMAN = PacMan()
 
 # players indicators
-PLAYERS = OrderedDict({0: None, 1: None, 2: None, 3: None})
+PLAYERS_JOINED = OrderedDict({0: None, 1: None, 2: None, 3: None})
+PLAYERS_READY = OrderedDict({0: False, 1: False, 2: False, 3: False})
 PLAYER_RED = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert_alpha()
 PLAYER_PINK = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert_alpha()
 PLAYER_CYAN = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_blue.gif")).convert_alpha()
 PLAYER_ORANGE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
 PLAYER_NONE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_vulnerable.gif")).convert_alpha()
 JOIN_KEYS = {pygame.K_1: PLAYER_RED, pygame.K_2: PLAYER_PINK, pygame.K_3: PLAYER_CYAN, pygame.K_4: PLAYER_ORANGE}
+JOYSTICK_START_BUTTON = 4
 JOYSTICK_JOIN_BUTTON = 5
 JOYSTICKS = []
 for j in range(pygame.joystick.get_count()):
@@ -1605,8 +1614,8 @@ while True:
                 # we will show the high scores here later too
                 # go back to the main menu and clear the players
                 thisGame.levelNum = 0
-                for pid, player in PLAYERS.items():
-                    PLAYERS[pid] = None
+                for pid, player in PLAYERS_JOINED.items():
+                    PLAYERS_JOINED[pid] = None
 
     screen.blit(img_Background, (0, 0))
 
@@ -1632,7 +1641,9 @@ while True:
         screen_w, screen_h = thisGame.screenSize
         quarter_screen_w = thisGame.screenSize[0] / 4
         eighth_screen_w = quarter_screen_w / 2
-        for idx, player_img in enumerate(PLAYERS.values(), 1):
+        for idx, player_img in enumerate(PLAYERS_JOINED.values(), 1):
+            draw_border = player_img and PLAYERS_READY[idx - 1]
+
             if player_img is None:
                 player_img = PLAYER_NONE
             player_w, player_h = player_img.get_size()
@@ -1643,6 +1654,16 @@ while True:
             player_pos_bottom = (4 - idx) * quarter_screen_w
             screen.blit(player_img, (player_pos - player_base_x_top, screen_h - player_y_pad))
             screen.blit(flip(player_img, True, True), (player_pos_bottom + player_base_x_bottom, player_y_pad - player_h))
+
+            if draw_border:
+                player_border_w, player_border_h = thisGame.ready_border.get_size()
+                player_and_shadow_w_diff = (player_border_w - player_w) / 2
+                player_and_shadow_h_diff = (player_border_h - player_h) / 2
+                for y in range(player_border_h):
+                    for x in range(player_border_w):
+                        if thisGame.ready_border.get_at((x, y)) != TRANSPARENT:
+                            thisGame.ready_border.set_at((x, y), thisGame.ghost_colors[idx - 1])
+                screen.blit(thisGame.ready_border, (player_pos - player_base_x_top - player_and_shadow_w_diff, screen_h - player_y_pad - player_and_shadow_h_diff))
 
         controls_w, controls_h = thisGame.controls_pressed_right_image.get_size()
         if controls_press_timer > 0:
