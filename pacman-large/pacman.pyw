@@ -1491,6 +1491,7 @@ for j in range(pygame.joystick.get_count()):
     JOYSTICKS.append(new_joystick)
 CONTROLS_PRESS_TIMER_MAX = 25
 controls_press_timer = CONTROLS_PRESS_TIMER_MAX
+controls_ready_timeout = 1000
 
 # create a path_finder object
 path = PathFinder()
@@ -1637,34 +1638,41 @@ while True:
     if thisGame.mode == 5:
         thisGame.DrawNumber(thisGame.ghostValue / 2, (THE_PACMAN.x - thisGame.screenPixelPos[0] - 4, THE_PACMAN.y - thisGame.screenPixelPos[1] + 6))
 
-    if thisGame.levelNum == 0:
+    if thisGame.levelNum == 0:  # main menu
         screen_w, screen_h = thisGame.screenSize
         quarter_screen_w = thisGame.screenSize[0] / 4
         eighth_screen_w = quarter_screen_w / 2
+        # draw players
         for idx, player_img in enumerate(PLAYERS_JOINED.values(), 1):
             draw_border = player_img and PLAYERS_READY[idx - 1]
-
-            if player_img is None:
+            if player_img is None:  # player joined?
                 player_img = PLAYER_NONE
-            player_w, player_h = player_img.get_size()
-            player_base_x_top = eighth_screen_w + player_w / 2
-            player_base_x_bottom = eighth_screen_w - player_w / 2
-            player_y_pad = player_h * 2 + player_h / 2
-            player_pos = idx * quarter_screen_w
-            player_pos_bottom = (4 - idx) * quarter_screen_w
-            screen.blit(player_img, (player_pos - player_base_x_top, screen_h - player_y_pad))
-            screen.blit(flip(player_img, True, True), (player_pos_bottom + player_base_x_bottom, player_y_pad - player_h))
 
-            if draw_border:
+            player_w, player_h = player_img.get_size()
+            player_y_pad = player_h * 2 + player_h / 2
+
+            player_base_x_bottom = eighth_screen_w + player_w / 2
+            player_pos_bottom = idx * quarter_screen_w
+            screen.blit(player_img, (player_pos_bottom - player_base_x_bottom, screen_h - player_y_pad))
+
+            player_base_x_top = eighth_screen_w - player_w / 2
+            player_pos_top = (4 - idx) * quarter_screen_w
+            screen.blit(flip(player_img, True, True), (player_pos_top + player_base_x_top, player_y_pad - player_h))
+
+            if draw_border:  # draw a border in players that are ready
                 player_border_w, player_border_h = thisGame.ready_border.get_size()
-                player_and_shadow_w_diff = (player_border_w - player_w) / 2
-                player_and_shadow_h_diff = (player_border_h - player_h) / 2
-                for y in range(player_border_h):
+                for y in range(player_border_h):  # re-color the border according to the player ghost
                     for x in range(player_border_w):
                         if thisGame.ready_border.get_at((x, y)) != TRANSPARENT:
                             thisGame.ready_border.set_at((x, y), thisGame.ghost_colors[idx - 1])
-                screen.blit(thisGame.ready_border, (player_pos - player_base_x_top - player_and_shadow_w_diff, screen_h - player_y_pad - player_and_shadow_h_diff))
 
+                player_and_shadow_w_diff_bottom = (player_border_w - player_w) / 2
+                player_and_shadow_h_diff_bottom = (player_border_h - player_h) / 2
+                screen.blit(thisGame.ready_border, (player_pos_bottom - player_base_x_bottom - player_and_shadow_w_diff_bottom, screen_h - player_y_pad - player_and_shadow_h_diff_bottom))
+
+                screen.blit(flip(thisGame.ready_border, True, True), (player_pos_top + player_base_x_top - player_and_shadow_w_diff_bottom, player_y_pad - (player_border_h - player_and_shadow_h_diff_bottom)))
+
+        # flash the controls buttons pressed/released state
         controls_w, controls_h = thisGame.controls_pressed_right_image.get_size()
         if controls_press_timer > 0:
             screen.blit(thisGame.controls_pressed_right_image, (screen_w / 2 - controls_w / 2, screen_h - controls_h))
