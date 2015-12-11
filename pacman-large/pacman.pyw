@@ -239,8 +239,10 @@ class Game:
         if self.mode == 3:
             # hack x.x
             if self.levelNum != 0 and thisGame.modeTimer >= 150:
-                GAME_OVER_BASE_X = -270
-                screen.blit(self.imGameOver, (GAME_OVER_BASE_X, 0))
+                screen_ = pygame.display.get_surface()
+                if screen_.get_size() != (RES_W, RES_H):
+                    pygame.display.set_mode((RES_W, RES_H), DISPLAY_MODE_FLAGS)
+                screen.blit(self.imGameOver, (0, 0))
 
         if self.mode == 4:
             READY_BASE_Y = 10
@@ -1387,11 +1389,20 @@ def check_inputs():
                         ghost.vel_x = 0
                         ghost.vel_y = -ghost.speed
     elif thisGame.mode == 3:
-        if pygame.key.get_pressed()[pygame.K_RETURN]:
-            if thisGame.levelNum != 0:
-                # we at game over and will show the menu again
-                thisLevel.LoadLevel(0)
-                thisGame.levelNum = 0
+        for i in range(0, thisGame.ghosts_quantity, 1):
+            ghost = thisGame.ghosts[i]
+            controls = ghost.controls
+            js = controls.joystick
+            if pygame.key.get_pressed()[pygame.K_RETURN] or (js and (js.get_button(JOYSTICK_JOIN_BUTTON) or js.get_button(JOYSTICK_START_BUTTON))):
+                if thisGame.levelNum != 0:
+                    # we at game over and will show the menu again
+                    for pid, player in PLAYERS_JOINED.items():
+                        PLAYERS_JOINED[pid] = None
+                        PLAYERS_READY[pid] = False
+                    thisGame.levelNum = 0
+                    thisLevel.LoadLevel(thisGame.GetLevelNum())
+                    thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
+                    pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
     if pygame.key.get_pressed()[pygame.K_F5]:
         sys.exit(0)
 
@@ -1401,8 +1412,8 @@ def check_events(event):
         if thisGame.mode == 3:
             if thisGame.levelNum == 0:
                 # players joining and leaving
-                for idx, player in enumerate(JOIN_KEYS.items()):
-                    key, image = player
+                for idx, player_img in enumerate(JOIN_KEYS.items()):
+                    key, image = player_img
                     joystick = None
                     try:
                         joystick = pygame.joystick.Joystick(idx)
@@ -1421,11 +1432,15 @@ def check_events(event):
                             PLAYERS_READY[idx] = not PLAYERS_READY[idx]
                 # start the game
                 if pygame.key.get_pressed()[pygame.K_RETURN]:
-                    players = [player for player, image in PLAYERS_JOINED.items() if image]
-                    if len(players) > 0:  # only start with at least 1 player
-                        thisGame.setup_ghosts(players)
-                        thisGame.StartNewGame()
-                        play_sound(snd_ready)
+                    start_game()
+
+
+def start_game():
+    players = [player for player, image in PLAYERS_JOINED.items() if image]
+    if len(players) > 0:  # only start with at least 1 player
+        thisGame.setup_ghosts(players)
+        thisGame.StartNewGame()
+        play_sound(snd_ready)
 
 
 def build_controls(keys, joystick=None):
@@ -1490,8 +1505,9 @@ for j in range(pygame.joystick.get_count()):
     new_joystick.init()
     JOYSTICKS.append(new_joystick)
 CONTROLS_PRESS_TIMER_MAX = 25
+CONTROLS_READY_TIMEOUT_MAX = 65
 controls_press_timer = CONTROLS_PRESS_TIMER_MAX
-controls_ready_timeout = 1000
+controls_ready_timeout = CONTROLS_READY_TIMEOUT_MAX
 
 # create a path_finder object
 path = PathFinder()
@@ -1504,11 +1520,10 @@ tileID = {}  # gives tile ID (when the name is known)
 tileIDImage = {}  # gives tile image (when the ID# is known)
 
 # create game and level objects and load first level
+MAX_LEVEL = 11
 thisGame = Game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
-MAX_LEVEL = 11
-
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
@@ -1614,9 +1629,14 @@ while True:
                 pacman_credits()
                 # we will show the high scores here later too
                 # go back to the main menu and clear the players
-                thisGame.levelNum = 0
+                thisGame.mode = 3
                 for pid, player in PLAYERS_JOINED.items():
                     PLAYERS_JOINED[pid] = None
+                    PLAYERS_READY[pid] = False
+                thisGame.levelNum = 0
+                thisLevel.LoadLevel(thisGame.GetLevelNum())
+                thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
+                pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
     screen.blit(img_Background, (0, 0))
 
@@ -1683,6 +1703,14 @@ while True:
             if controls_press_timer == -CONTROLS_PRESS_TIMER_MAX:
                 controls_press_timer = CONTROLS_PRESS_TIMER_MAX
         controls_press_timer -= 1
+
+        joined_qty = len([joined for joined in PLAYERS_JOINED.values() if joined is not None])
+        if joined_qty > 0 and joined_qty == len([ready for ready in PLAYERS_READY.values() if ready]):
+            controls_ready_timeout -= 1
+        else:
+            controls_ready_timeout = CONTROLS_READY_TIMEOUT_MAX
+        if controls_ready_timeout == 0:
+            start_game()
     else:
         thisGame.DrawScore()
 
