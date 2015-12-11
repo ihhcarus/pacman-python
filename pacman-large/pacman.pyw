@@ -44,8 +44,9 @@ DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
-
 screen = pygame.display.get_surface()
+RES_W = 1280  # your computer actual resolution width
+RES_H = 768  # your computer actual resolution height
 
 img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
@@ -135,7 +136,7 @@ class Game:
         self.screenNearestTilePos = (0, 0)  # nearest-tile position of the screen from the UL corner
         self.screenPixelOffset = (0, 0)  # offset in pixels of the screen from its nearest-tile position
         self.screenTileSize = (60, 60)
-        self.screenSize = (1280, 768)
+        self.screenSize = (RES_W, RES_H)
 
         # numerical display digits
         self.digit = {}
@@ -150,6 +151,9 @@ class Game:
         self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
         self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
+
+        self.controls_pressed_right_image = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "controls-p-r.gif")).convert_alpha()
+        self.controls_pressed_left_image = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "controls-p-l.gif")).convert_alpha()
 
         self.ghosts_quantity = 0
         self.ghosts = []
@@ -1476,7 +1480,8 @@ for j in range(pygame.joystick.get_count()):
     new_joystick = pygame.joystick.Joystick(j)
     new_joystick.init()
     JOYSTICKS.append(new_joystick)
-
+CONTROLS_PRESS_TIMER_MAX = 25
+controls_press_timer = CONTROLS_PRESS_TIMER_MAX
 
 # create a path_finder object
 path = PathFinder()
@@ -1595,12 +1600,12 @@ while True:
                 thisGame.SetNextLevel()
             else:
                 # full screen for the credits
-                pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
+                pygame.display.set_mode((RES_W, RES_H), DISPLAY_MODE_FLAGS)
                 pacman_credits()
                 # we will show the high scores here later too
                 # go back to the main menu and clear the players
                 thisGame.levelNum = 0
-                for pid, player in PLAYERS:
+                for pid, player in PLAYERS.items():
                     PLAYERS[pid] = None
 
     screen.blit(img_Background, (0, 0))
@@ -1623,23 +1628,34 @@ while True:
     if thisGame.mode == 5:
         thisGame.DrawNumber(thisGame.ghostValue / 2, (THE_PACMAN.x - thisGame.screenPixelPos[0] - 4, THE_PACMAN.y - thisGame.screenPixelPos[1] + 6))
 
-    thisGame.DrawScore()
-
     if thisGame.levelNum == 0:
+        screen_w, screen_h = thisGame.screenSize
         quarter_screen_w = thisGame.screenSize[0] / 4
         eighth_screen_w = quarter_screen_w / 2
         for idx, player_img in enumerate(PLAYERS.values(), 1):
             if player_img is None:
                 player_img = PLAYER_NONE
-            player_w = player_img.get_size()[0]
-            player_h = player_img.get_size()[1]
+            player_w, player_h = player_img.get_size()
             player_base_x_top = eighth_screen_w + player_w / 2
             player_base_x_bottom = eighth_screen_w - player_w / 2
             player_y_pad = player_h * 2 + player_h / 2
             player_pos = idx * quarter_screen_w
             player_pos_bottom = (4 - idx) * quarter_screen_w
-            screen.blit(player_img, (player_pos - player_base_x_top, thisGame.screenSize[1] - player_y_pad))
+            screen.blit(player_img, (player_pos - player_base_x_top, screen_h - player_y_pad))
             screen.blit(flip(player_img, True, True), (player_pos_bottom + player_base_x_bottom, player_y_pad - player_h))
+
+        controls_w, controls_h = thisGame.controls_pressed_right_image.get_size()
+        if controls_press_timer > 0:
+            screen.blit(thisGame.controls_pressed_right_image, (screen_w / 2 - controls_w / 2, screen_h - controls_h))
+            screen.blit(flip(thisGame.controls_pressed_right_image, True, True), (screen_w / 2 - controls_w / 2, 0))
+        else:
+            screen.blit(thisGame.controls_pressed_left_image, (screen_w / 2 - controls_w / 2, screen_h - controls_h))
+            screen.blit(flip(thisGame.controls_pressed_left_image, True, True), (screen_w / 2 - controls_w / 2, 0))
+            if controls_press_timer == -CONTROLS_PRESS_TIMER_MAX:
+                controls_press_timer = CONTROLS_PRESS_TIMER_MAX
+        controls_press_timer -= 1
+    else:
+        thisGame.DrawScore()
 
     pygame.display.flip()
 
