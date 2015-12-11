@@ -12,7 +12,7 @@ from pygame.locals import *
 SCRIPT_PATH = sys.path[0]
 
 
-def credit(text, font_, color_, image1, image2, image3):
+def credit(text, font_, color_, image1, image2):
     try:
         text = text.decode('utf-8')
     except:
@@ -29,13 +29,14 @@ def credit(text, font_, color_, image1, image2, image3):
     scr_w = scr.get_size()[0]
     image1_w = image1.get_size()[0]
     image2_w = image2.get_size()[0]
-    image3_w = image3.get_size()[0]
     scrrect = scr.get_rect()
     bg = scr.copy()
 
     w, h = font_.size(' ')
     Rright = scrrect.centerx + w * 3
     Rleft = scrrect.centerx - w * 3
+
+    half_screen = scr.get_size()[1] / 2 - image2.get_size()[1] / 2
 
     foo = []
     for i, l in enumerate(text.splitlines()):
@@ -63,7 +64,7 @@ def credit(text, font_, color_, image1, image2, image3):
     y = 0
     while foo and not event.peek(QUIT):
         event.clear()
-        y -= 1
+        y -= 10
         for p in foo[:]:
             r = p[1].move(0, y)
             if r.bottom < 0:
@@ -80,41 +81,22 @@ def credit(text, font_, color_, image1, image2, image3):
         display.flip()
         scr.blit(bg, (0, 0))
         scr.blit(image1, (scr_w / 2 - image1_w / 2, y + 650))
-        scr.blit(image2, (Rleft - image2_w, y + 1030))
-        scr.blit(image3, (Rright, y + 1520))
-
+        photo_y = y + 2150
+        if photo_y < half_screen:
+            photo_y = half_screen
+        scr.blit(image2, (scr_w / 2 - image2_w / 2, photo_y))
     display.flip()
 
 
 def pacman_credits():
     text = """REVERSE PAC-MAN
-    _                                                 _
+    ___________________________________________________
 
     Developed by Aeroli.to
 
-    Mothafucker software engineer / Lead programmer
+    Mothafucker software engineer\\Icaro Raupp Henrique
 
-
-
-
-    \\Icaro Raupp Henrique
-
-
-
-
-
-
-    Programmer
-
-
-
-
-
-    Igor H. de Oliveira\\
-
-
-
-
+    Programmer\\Igor H. de Oliveira
 
 
     Source code at:
@@ -122,6 +104,9 @@ def pacman_credits():
 
 
     Adapted from David Reilly’s Pac-Man Python Project
+
+
+    Game, songs & sound effects:
 
     Based on “Pac-Man”
     Developed by Namco
@@ -133,16 +118,22 @@ def pacman_credits():
     Published by Nintendo
     Released in November 21, 1990 (Japan)
 
-    _                                                 _
+    ___________________________________________________
 
-    Have you heard about Konami Code?"""
+    Have you heard about Konami Code?
 
+
+
+
+
+
+
+     """
     font.init()
 
     font_ = pygame.font.Font(os.path.join(SCRIPT_PATH, "credits/res/font", "webpixel-bitmap_bold.otf"), 40)
     color_ = 0xa0a0a000
     image1 = image.load(os.path.join(SCRIPT_PATH, "credits/res/img/pac.gif")).convert_alpha()
     image2 = image.load(os.path.join(SCRIPT_PATH, "credits/res/photo/picture1.gif")).convert_alpha()
-    image3 = image.load(os.path.join(SCRIPT_PATH, "credits/res/photo/picture2.gif")).convert_alpha()
 
-    credit(text, font_, color_, image1, image2, image3)
+    credit(text, font_, color_, image1, image2)
