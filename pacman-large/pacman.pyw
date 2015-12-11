@@ -6,16 +6,16 @@ from math import sqrt
 from pygame.transform import flip
 import pygame, sys, os, random
 from pygame.locals import *
-from credit import pacman_credits
+from credits.credit import pacman_credits
 
 
 SCRIPT_PATH = sys.path[0]
 
 TILE_WIDTH = TILE_HEIGHT = 24
 
-# NO_GIF_TILES -- tile numbers which do not correspond to a GIF file
-# currently only "23" for the high-score list
-NO_GIF_TILES = [23]
+# cross ref config
+NO_GIF_TILES = [23]  # currently only "23" for the high-score list
+CROSS_REF_EMPTY_LINE = ["'", "", "#"]
 
 # Joystick defaults - maybe add a Preferences dialog in the future?
 JS_DEVNUM = 0  # device 0 (pygame joysticks always start at 0). if JS_DEVNUM is not a valid device, will use 0
@@ -1253,7 +1253,7 @@ class level():
                     rowNum += 1
 
         # reload all tiles and set appropriate colors
-        GetCrossRef()
+        load_cross_reference()
 
         # load map into the pathfinder object
         path.resize_map((self.lvlHeight, self.lvlWidth))
@@ -1421,55 +1421,42 @@ def build_controls(keys, joystick=None):
     return Control(**{name: control for name, control in zip(CONTROLS_DEF, keys + [joystick])})
 
 
-def GetCrossRef():
-    f = open(os.path.join(SCRIPT_PATH, "res", "crossref.txt"), 'r')
+def load_cross_reference():
+    cross_ref_file = open(os.path.join(SCRIPT_PATH, "res/config", "crossref.txt"), 'r')
+    line_num = 0
+    for line in cross_ref_file.readlines():
+        # ???
+        while len(line) > 0 and (line[-1] == '\n' or line[-1] == '\r'):
+            line = line[:-1]
+        while len(line) > 0 and (line[0] == '\n' or line[0] == '\r'):
+            line = line[1:]
 
-    lineNum = 0
-    useLine = False
+        split_by_space = line.split(' ')
 
-    for i in f.readlines():
-        while len(i) > 0 and (i[-1] == '\n' or i[-1] == '\r'): i = i[:-1]
-        while len(i) > 0 and (i[0] == '\n' or i[0] == '\r'): i = i[1:]
-        str_splitBySpace = i.split(' ')
+        if split_by_space[0] in CROSS_REF_EMPTY_LINE:
+            continue
 
-        j = str_splitBySpace[0]
+        tileIDName[int(split_by_space[0])] = split_by_space[1]
+        tileID[split_by_space[1]] = int(split_by_space[0])
 
-        if (j == "'" or j == "" or j == "#"):
-            # comment / whitespace line
-            useLine = False
+        this_id = int(split_by_space[0])
+        if this_id not in NO_GIF_TILES:
+            tileIDImage[this_id] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", split_by_space[1] + ".gif")).convert_alpha()
         else:
-            useLine = True
+            tileIDImage[this_id] = pygame.Surface((TILE_WIDTH, TILE_HEIGHT))
 
-        if useLine == True:
-            tileIDName[int(str_splitBySpace[0])] = str_splitBySpace[1]
-            tileID[str_splitBySpace[1]] = int(str_splitBySpace[0])
-
-            thisID = int(str_splitBySpace[0])
-            if not thisID in NO_GIF_TILES:
-                tileIDImage[thisID] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", str_splitBySpace[1] + ".gif")).convert_alpha()
-            else:
-                tileIDImage[thisID] = pygame.Surface((TILE_WIDTH, TILE_HEIGHT))
-
-            # change colors in tileIDImage to match maze colors
-            for y in range(0, TILE_WIDTH, 1):
-                for x in range(0, TILE_HEIGHT, 1):
-
-                    if tileIDImage[thisID].get_at((x, y)) == IMG_EDGE_LIGHT_COLOR:
-                        # wall edge
-                        tileIDImage[thisID].set_at((x, y), thisLevel.edgeLightColor)
-
-                    elif tileIDImage[thisID].get_at((x, y)) == IMG_FILL_COLOR:
-                        # wall fill
-                        tileIDImage[thisID].set_at((x, y), thisLevel.fillColor)
-
-                    elif tileIDImage[thisID].get_at((x, y)) == IMG_EDGE_SHADOW_COLOR:
-                        # pellet color
-                        tileIDImage[thisID].set_at((x, y), thisLevel.edgeShadowColor)
-
-                    elif tileIDImage[thisID].get_at((x, y)) == IMG_PELLET_COLOR:
-                        # pellet color
-                        tileIDImage[thisID].set_at((x, y), thisLevel.pelletColor)
-        lineNum += 1
+        # change colors in tileIDImage to match maze colors
+        for y in range(TILE_WIDTH):
+            for x in range(TILE_HEIGHT):
+                if tileIDImage[this_id].get_at((x, y)) == IMG_EDGE_LIGHT_COLOR:  # wall edge
+                    tileIDImage[this_id].set_at((x, y), thisLevel.edgeLightColor)
+                elif tileIDImage[this_id].get_at((x, y)) == IMG_FILL_COLOR:  # wall fill
+                    tileIDImage[this_id].set_at((x, y), thisLevel.fillColor)
+                elif tileIDImage[this_id].get_at((x, y)) == IMG_EDGE_SHADOW_COLOR:  # pellet color
+                    tileIDImage[this_id].set_at((x, y), thisLevel.edgeShadowColor)
+                elif tileIDImage[this_id].get_at((x, y)) == IMG_PELLET_COLOR:  # pellet color
+                    tileIDImage[this_id].set_at((x, y), thisLevel.pelletColor)
+        line_num += 1
 
 
 # create the pacman
@@ -1505,11 +1492,10 @@ tileIDImage = {}  # gives tile image (when the ID# is known)
 thisGame = Game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
-MAX_LEVEL = 1
+MAX_LEVEL = 11
 
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
-
 
 while True:
     for event in pygame.event.get():
@@ -1555,12 +1541,12 @@ while True:
                     thisLevel.edgeLightColor = (255, 255, 254, 255)
                     thisLevel.edgeShadowColor = (255, 255, 254, 255)
                     thisLevel.fillColor = (0, 0, 0, 255)
-                    GetCrossRef()
+                    load_cross_reference()
                 elif not normalSet.count(thisGame.modeTimer) == 0:
                     thisLevel.edgeLightColor = oldEdgeLightColor
                     thisLevel.edgeShadowColor = oldEdgeShadowColor
                     thisLevel.fillColor = oldFillColor
-                    GetCrossRef()
+                    load_cross_reference()
 
     elif thisGame.mode == 4:  # waiting to start
         thisGame.modeTimer += 1
@@ -1593,12 +1579,12 @@ while True:
             thisLevel.edgeLightColor = (255, 255, 254, 255)
             thisLevel.edgeShadowColor = (255, 255, 254, 255)
             thisLevel.fillColor = (0, 0, 0, 255)
-            GetCrossRef()
+            load_cross_reference()
         elif not normalSet.count(thisGame.modeTimer) == 0:
             thisLevel.edgeLightColor = oldEdgeLightColor
             thisLevel.edgeShadowColor = oldEdgeShadowColor
             thisLevel.fillColor = oldFillColor
-            GetCrossRef()
+            load_cross_reference()
         elif thisGame.modeTimer == 150:
             thisGame.SetMode(8)
 
