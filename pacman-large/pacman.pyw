@@ -1,28 +1,14 @@
 #! /usr/bin/python
 
-# pacman.pyw
-# By David Reilly
 
-# Modified by Andy Sommerville, 8 October 2007:
-# - Changed hard-coded DOS paths to os.path calls
-# - Added constant SCRIPT_PATH (so you don't need to have pacman.pyw and res in your cwd, as long
-# -   as those two are in the same directory)
-# - Changed text-file reading to accomodate any known EOLn method (\n, \r, or \r\n)
-# - I (happily) don't have a Windows box to test this. Blocks marked "WIN???"
-# -   should be examined if this doesn't run in Windows
-# - Added joystick support (configure by changing JS_* constants)
-# - Added a high-score list. Depends on wx for querying the user's name
-
-# Modified by Andy Sommerville, 11 October 2007:
-# - Mom's eyes aren't what they used to be, so I'm switching 16x16 tiles to 24x24
-#   Added constants TILE_WIDTH,TILE_HEIGHT to make this easier to change later.
 from collections import OrderedDict, namedtuple
 from math import sqrt
 from pygame.transform import flip
 import pygame, sys, os, random
 from pygame.locals import *
+from credit import pacman_credits
 
-# WIN???
+
 SCRIPT_PATH = sys.path[0]
 
 TILE_WIDTH = TILE_HEIGHT = 24
@@ -1519,9 +1505,11 @@ tileIDImage = {}  # gives tile image (when the ID# is known)
 thisGame = Game()
 thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
+MAX_LEVEL = 1
 
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
+
 
 while True:
     for event in pygame.event.get():
@@ -1617,7 +1605,17 @@ while True:
     elif thisGame.mode == 8:  # blank screen before changing levels
         thisGame.modeTimer += 1
         if thisGame.modeTimer == 10:
-            thisGame.SetNextLevel()
+            if thisGame.levelNum != MAX_LEVEL:
+                thisGame.SetNextLevel()
+            else:
+                # full screen for the credits
+                pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
+                pacman_credits()
+                # we will show the high scores here later too
+                # go back to the main menu and clear the players
+                thisGame.levelNum = 0
+                for pid, player in PLAYERS:
+                    PLAYERS[pid] = None
 
     screen.blit(img_Background, (0, 0))
 
@@ -1651,11 +1649,11 @@ while True:
             player_h = player_img.get_size()[1]
             player_base_x_top = eighth_screen_w + player_w / 2
             player_base_x_bottom = eighth_screen_w - player_w / 2
-            player_y_pad = 128
+            player_y_pad = player_h * 2 + player_h / 2
             player_pos = idx * quarter_screen_w
             player_pos_bottom = (4 - idx) * quarter_screen_w
             screen.blit(player_img, (player_pos - player_base_x_top, thisGame.screenSize[1] - player_y_pad))
-            screen.blit(flip(player_img, True, True), (player_pos_bottom + player_base_x_bottom, player_y_pad - player_h / 2))
+            screen.blit(flip(player_img, True, True), (player_pos_bottom + player_base_x_bottom, player_y_pad - player_h))
 
     pygame.display.flip()
 
