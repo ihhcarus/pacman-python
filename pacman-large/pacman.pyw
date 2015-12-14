@@ -1683,7 +1683,7 @@ while True:
                 player_border_w, player_border_h = thisGame.ready_border.get_size()
                 for y in range(player_border_h):  # re-color the border according to the player ghost
                     for x in range(player_border_w):
-                        if thisGame.ready_border.get_at((x, y)) != TRANSPARENT:
+                        if thisGame.ready_border.get_at((x, y))[3] != TRANSPARENT[3]:  # 0 alpha, no matter what color
                             thisGame.ready_border.set_at((x, y), thisGame.ghost_colors[idx - 1])
 
                 player_and_shadow_w_diff_bottom = (player_border_w - player_w) / 2
