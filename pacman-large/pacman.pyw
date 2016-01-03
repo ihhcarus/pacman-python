@@ -1,12 +1,17 @@
 #! /usr/bin/python
+# -*- coding: utf-8 -*-
 
 
 from collections import OrderedDict, namedtuple
+from collections import deque
 from math import sqrt
 from pygame.transform import flip
-import pygame, sys, os, random
-from pygame.locals import *
+import os
+import pygame
+import random
+import sys
 from credits.credit import pacman_credits
+from pygame.locals import *
 
 
 SCRIPT_PATH = sys.path[0]
@@ -32,7 +37,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = False
+MUTE_SOUNDS = True
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -40,7 +45,7 @@ pygame.init()
 # display setup
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # enable this to run in windowed mode
-# DISPLAY_MODE_FLAGS = 0
+DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
@@ -1407,6 +1412,19 @@ def check_inputs():
         sys.exit(0)
 
 
+def its_mario_time():
+    print 'its mario time'
+
+
+def check_code():
+    if len(kc_inputs) == len(KONAMI_CODE):
+        for kc_input, kc_expected in zip(kc_inputs, KONAMI_CODE):
+            if kc_input not in KC_POSSIBILITIES[kc_expected]:
+                break
+        else:
+            its_mario_time()
+
+
 def check_events(event):
     if event.type == KEYDOWN or event.type == JOYBUTTONDOWN:
         if thisGame.mode == 3:
@@ -1433,6 +1451,24 @@ def check_events(event):
                 # start the game
                 if pygame.key.get_pressed()[pygame.K_RETURN]:
                     start_game()
+    if event.type == JOYBUTTONDOWN or event.type == JOYAXISMOTION:
+        for joystick in JOYSTICKS:
+            if joystick.get_button(JOYSTICK_START_BUTTON):
+                kc_inputs.append(JOYSTICK_START_BUTTON)
+            elif joystick.get_button(JOYSTICK_JOIN_BUTTON):
+                kc_inputs.append(JOYSTICK_JOIN_BUTTON)
+            elif joystick.get_axis(JS_XAXIS) > 0.5:
+                kc_inputs.append(JOYSTICK_RIGHT)
+            elif joystick.get_axis(JS_XAXIS) < -0.5:
+                kc_inputs.append(JOYSTICK_LEFT)
+            elif joystick.get_axis(JS_YAXIS) > 0.5:
+                kc_inputs.append(JOYSTICK_DOWN)
+            elif joystick.get_axis(JS_YAXIS) < -0.5:
+                kc_inputs.append(JOYSTICK_UP)
+        check_code()
+    elif event.type == KEYDOWN:
+        kc_inputs.append(event.key)
+        check_code()
 
 
 def start_game():
@@ -1496,9 +1532,13 @@ PLAYER_PINK = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_
 PLAYER_CYAN = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_blue.gif")).convert_alpha()
 PLAYER_ORANGE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
 PLAYER_NONE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_vulnerable.gif")).convert_alpha()
-JOIN_KEYS = {pygame.K_1: PLAYER_RED, pygame.K_2: PLAYER_PINK, pygame.K_3: PLAYER_CYAN, pygame.K_4: PLAYER_ORANGE}
+JOIN_KEYS = {pygame.K_1: PLAYER_RED, pygame.K_2: PLAYER_PINK, pygame.K_3: PLAYER_CYAN, pygame.K_4: PLAYER_ORANGE}  # keyboard keys to join players
 JOYSTICK_START_BUTTON = 4
 JOYSTICK_JOIN_BUTTON = 5
+JOYSTICK_UP = 'JS_UP'
+JOYSTICK_DOWN = 'JS_DOWN'
+JOYSTICK_LEFT = 'JS_LEFT'
+JOYSTICK_RIGHT = 'JS_RIGHT'
 JOYSTICKS = []
 for j in range(pygame.joystick.get_count()):
     new_joystick = pygame.joystick.Joystick(j)
@@ -1508,6 +1548,17 @@ CONTROLS_PRESS_TIMER_MAX = 25
 CONTROLS_READY_TIMEOUT_MAX = 65
 controls_press_timer = CONTROLS_PRESS_TIMER_MAX
 controls_ready_timeout = CONTROLS_READY_TIMEOUT_MAX
+
+KC_POSSIBILITIES = {
+    'up': [pygame.K_w, pygame.K_t, pygame.K_i, K_UP, JOYSTICK_UP],
+    'down': [pygame.K_s, pygame.K_g, pygame.K_k, pygame.K_DOWN, JOYSTICK_DOWN],
+    'left': [pygame.K_a, pygame.K_f, pygame.K_j, pygame.K_LEFT, JOYSTICK_LEFT],
+    'right': [pygame.K_d, pygame.K_h, pygame.K_l, pygame.K_RIGHT, JOYSTICK_RIGHT],
+    'a': [pygame.K_a, JOYSTICK_START_BUTTON, JOYSTICK_JOIN_BUTTON],
+    'b': [pygame.K_b, JOYSTICK_START_BUTTON, JOYSTICK_JOIN_BUTTON],
+}
+KONAMI_CODE = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a']
+kc_inputs = deque(maxlen=len(KONAMI_CODE))  # structure that automatically enqueues and dequeues `maxlen` items
 
 # create a path_finder object
 path = PathFinder()
