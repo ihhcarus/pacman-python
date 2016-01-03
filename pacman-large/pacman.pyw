@@ -87,6 +87,7 @@ KEYS = [
 
 # colors for the ghosts
 TRANSPARENT = (0, 0, 0, 0)
+NOT_JOINED = (136, 136, 136, 255)
 RED = (255, 0, 0, 255)
 PINK = (255, 128, 255, 255)
 CYAN = (128, 255, 255, 255)
@@ -529,11 +530,11 @@ class ghost():
         self.currentPath = ""
 
         self.anim = {}
-        for i in range(1, 7, 1):
+        for i in range(1, 7):
             self.anim[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "ghost " + str(i) + ".gif")).convert_alpha()
             # change the ghost color in this frame
-            for y in range(0, TILE_HEIGHT, 1):
-                for x in range(0, TILE_WIDTH, 1):
+            for y in range(TILE_HEIGHT):
+                for x in range(TILE_WIDTH):
                     if self.anim[i].get_at((x, y)) == RED:
                         # default, red ghost body color
                         self.anim[i].set_at((x, y), thisGame.ghost_colors[self.id])
@@ -1430,8 +1431,7 @@ def check_events(event):
         if thisGame.mode == 3:
             if thisGame.levelNum == 0:
                 # players joining and leaving
-                for idx, player_img in enumerate(JOIN_KEYS.items()):
-                    key, image = player_img
+                for idx, key in enumerate(JOIN_KEYS):
                     joystick = None
                     try:
                         joystick = pygame.joystick.Joystick(idx)
@@ -1440,10 +1440,10 @@ def check_events(event):
                         pass
                     if pygame.key.get_pressed()[key] or (joystick and joystick.get_button(JOYSTICK_JOIN_BUTTON)):
                         if PLAYERS_JOINED[idx]:
-                            PLAYERS_JOINED[idx] = None
+                            PLAYERS_JOINED[idx] = False
                             PLAYERS_READY[idx] = False  # if a player leaves also un-ready him
                         else:
-                            PLAYERS_JOINED[idx] = image
+                            PLAYERS_JOINED[idx] = True
                     keys = KEYS[idx]
                     if pygame.key.get_pressed()[keys[3]] or (joystick and joystick.get_button(JOYSTICK_START_BUTTON)):  # ready on up pressed
                         if PLAYERS_JOINED[idx]:
@@ -1525,14 +1525,11 @@ def load_cross_reference():
 THE_PACMAN = PacMan()
 
 # players indicators
-PLAYERS_JOINED = OrderedDict({0: None, 1: None, 2: None, 3: None})
+PLAYERS_JOINED = OrderedDict({0: False, 1: False, 2: False, 3: False})
 PLAYERS_READY = OrderedDict({0: False, 1: False, 2: False, 3: False})
-PLAYER_RED = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_red.gif")).convert_alpha()
-PLAYER_PINK = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_pink.gif")).convert_alpha()
-PLAYER_CYAN = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_blue.gif")).convert_alpha()
-PLAYER_ORANGE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_orange.gif")).convert_alpha()
-PLAYER_NONE = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ghost_vulnerable.gif")).convert_alpha()
-JOIN_KEYS = {pygame.K_1: PLAYER_RED, pygame.K_2: PLAYER_PINK, pygame.K_3: PLAYER_CYAN, pygame.K_4: PLAYER_ORANGE}  # keyboard keys to join players
+PLAYER_NOT_JOINED = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "player_not_joined.png")).convert_alpha()
+last_color = NOT_JOINED  # to remember the color of the last joined player
+JOIN_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]  # keyboard keys to join players
 JOYSTICK_START_BUTTON = 4
 JOYSTICK_JOIN_BUTTON = 5
 JOYSTICK_UP = 'JS_UP'
@@ -1681,7 +1678,7 @@ while True:
                 # we will show the high scores here later too
                 # go back to the main menu and clear the players
                 thisGame.mode = 3
-                for pid, player in PLAYERS_JOINED.items():
+                for pid, _ in PLAYERS_JOINED.items():
                     PLAYERS_JOINED[pid] = None
                     PLAYERS_READY[pid] = False
                 thisGame.levelNum = 0
@@ -1713,34 +1710,39 @@ while True:
         screen_w, screen_h = thisGame.screenSize
         quarter_screen_w = thisGame.screenSize[0] / 4
         eighth_screen_w = quarter_screen_w / 2
-        # draw players
-        for idx, player_img in enumerate(PLAYERS_JOINED.values(), 1):
-            draw_border = player_img and PLAYERS_READY[idx - 1]
-            if player_img is None:  # player joined?
-                player_img = PLAYER_NONE
+        # draw joining players
+        for idx, has_joined in enumerate(PLAYERS_JOINED.values(), 1):
+            # draw gray ghost unless player has joined then draw its color
+            color = NOT_JOINED
+            player_img = PLAYER_NOT_JOINED
+            if has_joined:
+                color = thisGame.ghost_colors[idx - 1]
 
             player_w, player_h = player_img.get_size()
             player_y_pad = player_h * 2 + player_h / 2
-
+            # re-color the ghost according to the player
+            for y in range(player_h):
+                for x in range(player_w):
+                    if player_img.get_at((x, y)) == last_color:
+                        player_img.set_at((x, y), color)
+            last_color = color
+            # draw the players that have joined on bottom...
             player_base_x_bottom = eighth_screen_w + player_w / 2
             player_pos_bottom = idx * quarter_screen_w
-            screen.blit(player_img, (player_pos_bottom - player_base_x_bottom, screen_h - player_y_pad))
-
             player_base_x_top = eighth_screen_w - player_w / 2
             player_pos_top = (4 - idx) * quarter_screen_w
+            screen.blit(player_img, (player_pos_bottom - player_base_x_bottom, screen_h - player_y_pad))
             screen.blit(flip(player_img, True, True), (player_pos_top + player_base_x_top, player_y_pad - player_h))
-
-            if draw_border:  # draw a border in players that are ready
+            # draw a border in players that are ready
+            if has_joined and PLAYERS_READY[idx - 1]:
                 player_border_w, player_border_h = thisGame.ready_border.get_size()
                 for y in range(player_border_h):  # re-color the border according to the player ghost
                     for x in range(player_border_w):
                         if thisGame.ready_border.get_at((x, y)) != TRANSPARENT:
                             thisGame.ready_border.set_at((x, y), thisGame.ghost_colors[idx - 1])
-
                 player_and_shadow_w_diff_bottom = (player_border_w - player_w) / 2
                 player_and_shadow_h_diff_bottom = (player_border_h - player_h) / 2
                 screen.blit(thisGame.ready_border, (player_pos_bottom - player_base_x_bottom - player_and_shadow_w_diff_bottom, screen_h - player_y_pad - player_and_shadow_h_diff_bottom))
-
                 screen.blit(flip(thisGame.ready_border, True, True), (player_pos_top + player_base_x_top - player_and_shadow_w_diff_bottom, player_y_pad - (player_border_h - player_and_shadow_h_diff_bottom)))
 
         # flash the controls buttons pressed/released state
@@ -1754,8 +1756,8 @@ while True:
             if controls_press_timer == -CONTROLS_PRESS_TIMER_MAX:
                 controls_press_timer = CONTROLS_PRESS_TIMER_MAX
         controls_press_timer -= 1
-
-        joined_qty = len([joined for joined in PLAYERS_JOINED.values() if joined is not None])
+        # start the game if all joined players are ready
+        joined_qty = len([joined for joined in PLAYERS_JOINED.values() if joined])
         if joined_qty > 0 and joined_qty == len([ready for ready in PLAYERS_READY.values() if ready]):
             controls_ready_timeout -= 1
         else:
