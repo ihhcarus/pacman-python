@@ -110,6 +110,21 @@ MODE_MENU_GAME_OVER = 7
 MODE_MENU_HIGH_SCORES = 8
 
 
+# sys paths
+BASE_RES_PATH = 'res'
+TEXT_RES_PATH = 'text'
+
+MARIO_ALT_PATH = 'mario'
+
+
+# helper function to load resources and their alternatives
+def load_res(folder, file_name, alt=None):
+    folder_and_alt = folder
+    if alt:
+        folder_and_alt += "-" + alt
+    return pygame.image.load(os.path.join(SCRIPT_PATH, BASE_RES_PATH, folder_and_alt, file_name)).convert_alpha()
+
+
 def play_sound(snd, loops=0):
     if not MUTE_SOUNDS:
         snd.play(loops)
@@ -1415,6 +1430,8 @@ def check_inputs():
 
 def its_mario_time():
     print 'its mario time'
+    for res in RES_WITH_ALTS:
+        res.instance = load_res(res.folder, res.file_name, MARIO_ALT_PATH)
 
 
 def check_code():
@@ -1521,13 +1538,21 @@ def load_cross_reference():
         line_num += 1
 
 
+# structure to hold resources that have alternatives, this ensures the proper loading when konami code is input
+class ResWithAlt(object):
+    def __init__(self, folder, file_name, instance=None):
+        self.folder = folder
+        self.file_name = file_name
+        self.instance = instance
+
+
 # create the pacman
 THE_PACMAN = PacMan()
 
 # players indicators
 PLAYERS_JOINED = OrderedDict({0: False, 1: False, 2: False, 3: False})
 PLAYERS_READY = OrderedDict({0: False, 1: False, 2: False, 3: False})
-PLAYER_NOT_JOINED = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "player_not_joined.png")).convert_alpha()
+PLAYER_NOT_JOINED = ResWithAlt(TEXT_RES_PATH, 'player_not_joined.png')
 last_color = NOT_JOINED  # to remember the color of the last joined player
 JOIN_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]  # keyboard keys to join players
 JOYSTICK_START_BUTTON = 4
@@ -1541,6 +1566,7 @@ for j in range(pygame.joystick.get_count()):
     new_joystick = pygame.joystick.Joystick(j)
     new_joystick.init()
     JOYSTICKS.append(new_joystick)
+# timers to animate the menu controls image
 CONTROLS_PRESS_TIMER_MAX = 25
 CONTROLS_READY_TIMEOUT_MAX = 65
 controls_press_timer = CONTROLS_PRESS_TIMER_MAX
@@ -1574,6 +1600,14 @@ thisLevel = level()
 thisLevel.LoadLevel(thisGame.GetLevelNum())
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
+
+# list of resources that have alternatives to be loaded when the konami code is activated
+RES_WITH_ALTS = [
+    PLAYER_NOT_JOINED,
+]
+for res in RES_WITH_ALTS:
+    res.instance = load_res(res.folder, res.file_name)
+
 
 while True:
     for event in pygame.event.get():
@@ -1714,7 +1748,7 @@ while True:
         for idx, has_joined in enumerate(PLAYERS_JOINED.values(), 1):
             # draw gray ghost unless player has joined then draw its color
             color = NOT_JOINED
-            player_img = PLAYER_NOT_JOINED
+            player_img = PLAYER_NOT_JOINED.instance
             if has_joined:
                 color = thisGame.ghost_colors[idx - 1]
 
