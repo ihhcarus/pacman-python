@@ -99,6 +99,7 @@ BASE_RES_PATH = 'res'
 TEXT_RES_PATH = 'text'
 SOUND_RES_PATH = 'sounds'
 SPRITE_RES_PATH = 'sprite'
+TILE_RES_PATH = 'tiles'
 
 MARIO_ALT_PATH = 'mario'
 
@@ -112,6 +113,13 @@ def load_res(folder, file_name, alt=None, is_sound=False):
         return pygame.mixer.Sound(os.path.join(SCRIPT_PATH, BASE_RES_PATH, folder_and_alt, file_name))
     else:
         return pygame.image.load(os.path.join(SCRIPT_PATH, BASE_RES_PATH, folder_and_alt, file_name)).convert_alpha()
+
+
+def refresh_alt_res():
+    for res in RES_WITH_ALTS:
+        res.instance = load_res(res.folder, res.file_name, thisGame.konami_code_alt)
+    for res in SND_WITH_ALTS:
+        res.instance = load_res(res.folder, res.file_name, thisGame.konami_code_alt, is_sound=True)
 
 
 def play_sound(snd, loops=0):
@@ -255,6 +263,9 @@ class Game:
                 if screen_.get_size() != (RES_W, RES_H):
                     pygame.display.set_mode((RES_W, RES_H), DISPLAY_MODE_FLAGS)
                 screen.blit(self.imGameOver, (0, 0))
+                if thisGame.konami_code_alt:  # reset assets after game over
+                        thisGame.konami_code_alt = None
+                        refresh_alt_res()
 
         if self.mode == 4:
             READY_BASE_Y = 10
@@ -1035,7 +1046,7 @@ class level():
         result = thisLevel.GetMapTile((row, col))
 
         # if the tile was a wall
-        if result >= 100 and result <= 199:
+        if 100 <= result <= 199:
             return True
         else:
             return False
@@ -1178,7 +1189,7 @@ class level():
 
             j = str_splitBySpace[0]
 
-            if (j == "'" or j == ""):
+            if j == "'" or j == "":
                 # comment / whitespace line
                 useLine = False
             elif j == "#":
@@ -1245,7 +1256,6 @@ class level():
 
             # this is a map data line
             if useLine == True:
-
                 if isReadingLevelData == True:
                     for k in range(0, self.lvlWidth, 1):
                         self.SetMapTile((rowNum, k), int(str_splitBySpace[k]))
@@ -1253,7 +1263,6 @@ class level():
                         thisID = int(str_splitBySpace[k])
                         if thisID == 4:
                             # starting position for pac-man
-
                             THE_PACMAN.home_x = k * TILE_WIDTH
                             THE_PACMAN.home_y = rowNum * TILE_HEIGHT
                             self.SetMapTile((rowNum, k), 0)
@@ -1269,7 +1278,6 @@ class level():
 
                         elif thisID == 2:
                             # pellet
-
                             self.pellets += 1
 
                     rowNum += 1
@@ -1422,12 +1430,8 @@ def check_inputs():
 
 
 def its_mario_time():
-    print 'its mario time'
     thisGame.konami_code_alt = MARIO_ALT_PATH
-    for res in RES_WITH_ALTS:
-        res.instance = load_res(res.folder, res.file_name, MARIO_ALT_PATH)
-    for res in SND_WITH_ALTS:
-        res.instance = load_res(res.folder, res.file_name, MARIO_ALT_PATH, is_sound=True)
+    refresh_alt_res()
 
 
 def check_code():
@@ -1500,7 +1504,6 @@ def load_cross_reference():
     cross_ref_file = open(os.path.join(SCRIPT_PATH, "res/config", "crossref.txt"), 'r')
     line_num = 0
     for line in cross_ref_file.readlines():
-        # ???
         while len(line) > 0 and (line[-1] == '\n' or line[-1] == '\r'):
             line = line[:-1]
         while len(line) > 0 and (line[0] == '\n' or line[0] == '\r'):
@@ -1516,7 +1519,10 @@ def load_cross_reference():
 
         this_id = int(split_by_space[0])
         if this_id not in NO_GIF_TILES:
-            tileIDImage[this_id] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", split_by_space[1] + ".gif")).convert_alpha()
+            alt = None
+            if 100 <= this_id <= 199 or this_id in [2, 3]:
+                alt = thisGame.konami_code_alt
+            tileIDImage[this_id] = load_res(TILE_RES_PATH, split_by_space[1] + ".gif", alt)
         else:
             tileIDImage[this_id] = pygame.Surface((TILE_WIDTH, TILE_HEIGHT))
 
@@ -1549,7 +1555,6 @@ THE_PACMAN = PacMan()
 PLAYERS_JOINED = OrderedDict({0: False, 1: False, 2: False, 3: False})
 PLAYERS_READY = OrderedDict({0: False, 1: False, 2: False, 3: False})
 player_not_joined_res_a = ResWithAlt(TEXT_RES_PATH, 'player_not_joined.png')
-# self.ready_border = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready_border.gif")).convert_alpha()
 player_not_joined_border_res_a = ResWithAlt(TEXT_RES_PATH, 'player_not_joined_border.png')
 last_color = NOT_JOINED  # to remember the color of the last joined player
 JOIN_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]  # keyboard keys to join players
@@ -1620,14 +1625,12 @@ RES_WITH_ALTS = [
     thisGame.life_res_a,
 ]
 RES_WITH_ALTS += THE_PACMAN.anim_left.values() + THE_PACMAN.anim_right.values() + THE_PACMAN.anim_up.values() + THE_PACMAN.anim_down.values() + THE_PACMAN.anim_stopped.values()
-for res in RES_WITH_ALTS:
-    res.instance = load_res(res.folder, res.file_name)
 SND_WITH_ALTS = [
     powerpellet_snd_a, eatgh_snd_a, extralife_snd_a, killpac_snd_a, ready_snd_a, eyes_snd_a, siren_snd_a
 ]
 SND_WITH_ALTS += pellet_snd_a.values()
-for res in SND_WITH_ALTS:
-    res.instance = load_res(res.folder, res.file_name, is_sound=True)
+
+refresh_alt_res()
 
 # everything is setup, let's play the game
 while True:
@@ -1740,6 +1743,9 @@ while True:
                 thisLevel.LoadLevel(thisGame.GetLevelNum())
                 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
                 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
+                if thisGame.konami_code_alt:  # reset assets after credits
+                    thisGame.konami_code_alt = None
+                    refresh_alt_res()
 
     screen.blit(img_Background, (0, 0))
 
