@@ -55,21 +55,6 @@ RES_H = 768  # your computer actual resolution height
 
 img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
-# sound setup
-snd_pellet = {
-    0: pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet1.wav")),
-    1: pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "pellet2.wav"))
-}
-snd_powerpellet = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "powerpellet.wav"))
-snd_eatgh = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatgh2.wav"))
-snd_fruitbounce = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
-snd_eatfruit = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
-snd_extralife = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "extralife.wav"))
-snd_killpac = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "killpac.wav"))
-snd_ready = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "ready.wav"))
-snd_eyes = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eyes.wav"))
-snd_siren = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "siren.wav"))
-
 # ghosts setup
 GHOST_REF_MIN = 10  # min value of cross ref for ghosts
 GHOST_REF_MAX = 13  # max value of cross ref for ghosts
@@ -109,24 +94,30 @@ MODE_GAME_NO_LIVES = 6
 MODE_MENU_GAME_OVER = 7
 MODE_MENU_HIGH_SCORES = 8
 
-
 # sys paths
 BASE_RES_PATH = 'res'
 TEXT_RES_PATH = 'text'
+SOUND_RES_PATH = 'sounds'
+SPRITE_RES_PATH = 'sprite'
 
 MARIO_ALT_PATH = 'mario'
 
 
 # helper function to load resources and their alternatives
-def load_res(folder, file_name, alt=None):
+def load_res(folder, file_name, alt=None, is_sound=False):
     folder_and_alt = folder
     if alt:
         folder_and_alt += "-" + alt
-    return pygame.image.load(os.path.join(SCRIPT_PATH, BASE_RES_PATH, folder_and_alt, file_name)).convert_alpha()
+    if is_sound:
+        return pygame.mixer.Sound(os.path.join(SCRIPT_PATH, BASE_RES_PATH, folder_and_alt, file_name))
+    else:
+        return pygame.image.load(os.path.join(SCRIPT_PATH, BASE_RES_PATH, folder_and_alt, file_name)).convert_alpha()
 
 
 def play_sound(snd, loops=0):
     if not MUTE_SOUNDS:
+        if type(snd) is ResWithAlt:
+            snd = snd.instance
         snd.play(loops)
 
 
@@ -164,7 +155,7 @@ class Game:
         self.digit = {}
         for i in range(0, 10, 1):
             self.digit[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", str(i) + ".gif")).convert_alpha()
-        self.imLife = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "life.gif")).convert_alpha()
+        self.life_res_a = ResWithAlt(TEXT_RES_PATH, 'life.gif')
         self.imGameOver = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "gameover.gif")).convert_alpha()
         self.imReady = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready.gif")).convert_alpha()
         self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert()
@@ -173,8 +164,6 @@ class Game:
         self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
         self.imLives = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "lives.gif")).convert_alpha()
-
-        self.ready_border = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready_border.gif")).convert_alpha()
 
         self.controls_pressed_right_image = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "controls-p-r.gif")).convert_alpha()
         self.controls_pressed_left_image = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "controls-p-l.gif")).convert_alpha()
@@ -186,6 +175,8 @@ class Game:
         self.vulnerable_ghost = None
         self.flashing_ghost = None
         self.ghost_colors = {0: RED, 1: PINK, 2: CYAN, 3: ORANGE}
+
+        self.konami_code_alt = None
 
     def StartNewGame(self):
         self.levelNum = 1
@@ -204,7 +195,7 @@ class Game:
 
         for specialScore in extraLifeSet:
             if self.score < specialScore and self.score + amount >= specialScore:
-                play_sound(snd_extralife)
+                play_sound(extralife_snd_a)
                 thisGame.lives += 1
 
         self.score += amount
@@ -225,19 +216,19 @@ class Game:
         self.DrawNumber(self.score, (num_pos_top, score_title_y_pad / 2), flip_xy=True)
 
         lives_title_w = self.imLives.get_size()[0]
-        life_w = self.imLife.get_size()[0]
+        life_w = self.life_res_a.instance.get_size()[0]
         lives_base_x = half_screen_w - lives_title_w / 2
         lives_title_y_pad = 35
         screen.blit(self.imLives, (lives_base_x, self.screenSize[1] - lives_title_y_pad))
         screen.blit(flip(self.imLives, True, True), (lives_base_x, lives_title_y_pad))
         for i in range(self.lives):
             life_pos = i * life_w
-            screen.blit(self.imLife, (life_pos + lives_base_x, self.screenSize[1] - lives_title_y_pad / 2))
+            screen.blit(self.life_res_a.instance, (life_pos + lives_base_x, self.screenSize[1] - lives_title_y_pad / 2))
             life_pos *= -1
             # crazy math that just works
             life_pos -= life_w
             life_pos += lives_title_w
-            screen.blit(flip(self.imLife, True, True), (life_pos + lives_base_x, lives_title_y_pad / 2))
+            screen.blit(flip(self.life_res_a.instance, True, True), (life_pos + lives_base_x, lives_title_y_pad / 2))
 
         powers_title_w = self.imPower.get_size()[0]
         pow_pel_w = self.imPowPel.get_size()[0]
@@ -546,13 +537,15 @@ class ghost():
 
         self.anim = {}
         for i in range(1, 7):
-            self.anim[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "ghost " + str(i) + ".gif")).convert_alpha()
+            self.anim[i] = ResWithAlt(SPRITE_RES_PATH, "ghost " + str(i) + ".gif")
+            # this one we have to load here because of the re-coloring
+            self.anim[i].instance = load_res(self.anim[i].folder, self.anim[i].file_name, thisGame.konami_code_alt)
             # change the ghost color in this frame
             for y in range(TILE_HEIGHT):
                 for x in range(TILE_WIDTH):
-                    if self.anim[i].get_at((x, y)) == RED:
-                        # default, red ghost body color
-                        self.anim[i].set_at((x, y), thisGame.ghost_colors[self.id])
+                    # default red ghost body color
+                    if self.anim[i].instance.get_at((x, y)) == RED:
+                        self.anim[i].instance.set_at((x, y), thisGame.ghost_colors[self.id])
 
         self.animFrame = 1
         self.animDelay = 0
@@ -564,35 +557,34 @@ class ghost():
     def Draw(self):
         for y in range(6, 12, 1):
             for x in [5, 6, 8, 9]:
-                self.anim[self.animFrame].set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
-                self.anim[self.animFrame].set_at((x + 9, y), (0xf8, 0xf8, 0xf8, 255))
+                self.anim[self.animFrame].instance.set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
+                self.anim[self.animFrame].instance.set_at((x + 9, y), (0xf8, 0xf8, 0xf8, 255))
 
         if THE_PACMAN.x > self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-right
-            pupilSet = (8, 9)
+            pupil_set = (8, 9)
         elif THE_PACMAN.x > self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-right
-            pupilSet = (8, 6)
+            pupil_set = (8, 6)
         elif THE_PACMAN.x < self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-left
-            pupilSet = (5, 6)
+            pupil_set = (5, 6)
         else:  # THE_PACMAN.x < self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-left
-            pupilSet = (5, 9)
-
-        for y in range(pupilSet[1], pupilSet[1] + 3, 1):
-            for x in range(pupilSet[0], pupilSet[0] + 2, 1):
-                self.anim[self.animFrame].set_at((x, y), (0, 0, 255, 255))
-                self.anim[self.animFrame].set_at((x + 9, y), (0, 0, 255, 255))
+            pupil_set = (5, 9)
+        for y in range(pupil_set[1], pupil_set[1] + 3, 1):
+            for x in range(pupil_set[0], pupil_set[0] + 2, 1):
+                self.anim[self.animFrame].instance.set_at((x, y), (0, 0, 255, 255))
+                self.anim[self.animFrame].instance.set_at((x + 9, y), (0, 0, 255, 255))
 
         # ghost skin
         if self.state == 1:  # draw regular ghost
-            screen.blit(self.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+            screen.blit(self.anim[self.animFrame].instance, (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 2:  # draw vulnerable ghost
             if thisGame.ghostTimer > 100:  # blue
-                screen.blit(thisGame.vulnerable_ghost.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                screen.blit(thisGame.vulnerable_ghost.anim[self.animFrame].instance, (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
             else:  # blue/white flashing
                 blink_timer = int(thisGame.ghostTimer / 10)
                 if blink_timer == 1 or blink_timer == 3 or blink_timer == 5 or blink_timer == 7 or blink_timer == 9:
-                    screen.blit(thisGame.flashing_ghost.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(thisGame.flashing_ghost.anim[self.animFrame].instance, (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
                 else:
-                    screen.blit(thisGame.vulnerable_ghost.anim[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+                    screen.blit(thisGame.vulnerable_ghost.anim[self.animFrame].instance, (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         elif self.state == 3:  # draw glasses
             screen.blit(tileIDImage[tileID['glasses']], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
 
@@ -631,7 +623,7 @@ class ghost():
                     for i in range(len(thisGame.ghosts)):
                         if thisGame.ghosts[i].state == 3:
                             return
-                    snd_eyes.stop()
+                    eyes_snd_a.instance.stop()
 
     def FollowNextPathWay(self):
         # only follow this pathway if there is a possible path found!
@@ -712,7 +704,7 @@ class fruit():
         elif self.bouncei == 16:
             self.bounceY = 0
             self.bouncei = 0
-            play_sound(snd_fruitbounce)
+            play_sound(fruitbounce_snd)
 
         self.slowTimer += 1
         if self.slowTimer == 2:
@@ -776,16 +768,17 @@ class PacMan:
         self.anim_down = {}
         self.anim_stopped = {}
         self.anim_current = {}
+        self.animFrame = 0
 
         self.currentPath = ""
         self.steps_to_change_path = 2
 
-        for i in range(1, 9, 1):
-            self.anim_left[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-l " + str(i) + ".gif")).convert_alpha()
-            self.anim_right[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-r " + str(i) + ".gif")).convert_alpha()
-            self.anim_up[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-u " + str(i) + ".gif")).convert_alpha()
-            self.anim_down[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman-d " + str(i) + ".gif")).convert_alpha()
-            self.anim_stopped[i] = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "sprite", "pacman.gif")).convert_alpha()
+        for i in range(1, 9):
+            self.anim_left[i] = ResWithAlt(SPRITE_RES_PATH, "pacman-l " + str(i) + ".gif")
+            self.anim_right[i] = ResWithAlt(SPRITE_RES_PATH, "pacman-r " + str(i) + ".gif")
+            self.anim_up[i] = ResWithAlt(SPRITE_RES_PATH, "pacman-u " + str(i) + ".gif")
+            self.anim_down[i] = ResWithAlt(SPRITE_RES_PATH, "pacman-d " + str(i) + ".gif")
+            self.anim_stopped[i] = ResWithAlt(SPRITE_RES_PATH, "pacman.gif")
 
         self.pellet_snd_num = 0  # ?
 
@@ -806,7 +799,7 @@ class PacMan:
                 if self.power_pellets:
                     self.power_pellets -= 1
                     pygame.mixer.stop()
-                    play_sound(snd_powerpellet)
+                    play_sound(powerpellet_snd_a)
                     thisGame.ghostValue = 200
                     thisGame.ghostTimer = VULNERABLE_TIMER
                     for g in range(0, thisGame.ghosts_quantity, 1):
@@ -819,18 +812,18 @@ class PacMan:
             if thisLevel.CheckIfHit((self.x, self.y), (thisGame.ghosts[i].x, thisGame.ghosts[i].y), TILE_WIDTH / 2):
                 if thisGame.ghosts[i].state == 1:
                     # ghost is normal, pacman dies
-                    play_sound(snd_killpac)
-                    snd_eyes.stop()
+                    play_sound(killpac_snd_a)
+                    eyes_snd_a.instance.stop()
                     thisGame.SetMode(2)
                 elif thisGame.ghosts[i].state == 2:
                     # ghost is vulnerable, ghost dies
                     thisGame.AddToScore(thisGame.ghostValue)
                     thisGame.ghostValue = thisGame.ghostValue * 2
-                    play_sound(snd_eatgh)
+                    play_sound(eatgh_snd_a)
                     thisGame.ghosts[i].state = 3
                     thisGame.ghosts[i].speed = thisGame.ghosts[i].speed * 4
-                    snd_eyes.stop()
-                    play_sound(snd_eyes, loops=-1)
+                    eyes_snd_a.instance.stop()
+                    play_sound(eyes_snd_a, loops=-1)
                     # and send them to the ghost box
                     thisGame.ghosts[i].x = thisGame.ghosts[i].nearest_col * TILE_WIDTH
                     thisGame.ghosts[i].y = thisGame.ghosts[i].nearest_row * TILE_HEIGHT
@@ -846,7 +839,7 @@ class PacMan:
                 for i in range(thisGame.ghosts_quantity):
                     if thisGame.ghosts[i].state == 2:
                         thisGame.ghosts[i].state = 1
-                    snd_powerpellet.stop()
+                    powerpellet_snd_a.instance.stop()
                 thisGame.ghostValue = 0
 
         if (self.x % TILE_WIDTH) == 0 and (self.y % TILE_HEIGHT) == 0:
@@ -921,7 +914,7 @@ class PacMan:
             self.anim_current = self.anim_down
         elif self.vel_y < 0:
             self.anim_current = self.anim_up
-        screen.blit(self.anim_current[self.animFrame], (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
+        screen.blit(self.anim_current[self.animFrame].instance, (self.x - thisGame.screenPixelPos[0], self.y - thisGame.screenPixelPos[1]))
         # Animate mouth movement
         if thisGame.mode == 1:
             if not self.vel_x == 0 or not self.vel_y == 0:  # Only animate when Pac-Man moves
@@ -1081,7 +1074,7 @@ class level():
                     if result == tileID['pellet']:
                         # got a pellet
                         thisLevel.SetMapTile((iRow, iCol), 0)
-                        play_sound(snd_pellet[THE_PACMAN.pellet_snd_num])
+                        play_sound(pellet_snd_a[THE_PACMAN.pellet_snd_num])
                         THE_PACMAN.pellet_snd_num = 1 - THE_PACMAN.pellet_snd_num
 
                         thisLevel.pellets -= 1
@@ -1092,7 +1085,7 @@ class level():
                             # no more pellets left!
                             # WON THE LEVEL
                             # thisGame.SetMode(6)
-                            play_sound(snd_killpac)
+                            play_sound(killpac_snd_a)
                             thisGame.SetMode(3)
 
                     elif result == tileID['pellet-power']:
@@ -1430,8 +1423,11 @@ def check_inputs():
 
 def its_mario_time():
     print 'its mario time'
+    thisGame.konami_code_alt = MARIO_ALT_PATH
     for res in RES_WITH_ALTS:
         res.instance = load_res(res.folder, res.file_name, MARIO_ALT_PATH)
+    for res in SND_WITH_ALTS:
+        res.instance = load_res(res.folder, res.file_name, MARIO_ALT_PATH, is_sound=True)
 
 
 def check_code():
@@ -1493,7 +1489,7 @@ def start_game():
     if len(players) > 0:  # only start with at least 1 player
         thisGame.setup_ghosts(players)
         thisGame.StartNewGame()
-        play_sound(snd_ready)
+        play_sound(ready_snd_a)
 
 
 def build_controls(keys, joystick=None):
@@ -1552,7 +1548,9 @@ THE_PACMAN = PacMan()
 # players indicators
 PLAYERS_JOINED = OrderedDict({0: False, 1: False, 2: False, 3: False})
 PLAYERS_READY = OrderedDict({0: False, 1: False, 2: False, 3: False})
-PLAYER_NOT_JOINED = ResWithAlt(TEXT_RES_PATH, 'player_not_joined.png')
+player_not_joined_res_a = ResWithAlt(TEXT_RES_PATH, 'player_not_joined.png')
+# self.ready_border = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready_border.gif")).convert_alpha()
+player_not_joined_border_res_a = ResWithAlt(TEXT_RES_PATH, 'player_not_joined_border.png')
 last_color = NOT_JOINED  # to remember the color of the last joined player
 JOIN_KEYS = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]  # keyboard keys to join players
 JOYSTICK_START_BUTTON = 4
@@ -1601,14 +1599,37 @@ thisLevel.LoadLevel(thisGame.GetLevelNum())
 thisGame.screenSize = (thisLevel.lvlWidth * 25, thisLevel.lvlHeight * 27)
 pygame.display.set_mode(thisGame.screenSize, DISPLAY_MODE_FLAGS)
 
+# sound setup
+pellet_snd_a = {
+    0: ResWithAlt(SOUND_RES_PATH, "pellet1.wav"),
+    1: ResWithAlt(SOUND_RES_PATH, "pellet2.wav")
+}
+powerpellet_snd_a = ResWithAlt(SOUND_RES_PATH, "powerpellet.wav")
+eatgh_snd_a = ResWithAlt(SOUND_RES_PATH, "eatgh2.wav")
+extralife_snd_a = ResWithAlt(SOUND_RES_PATH, "extralife.wav")
+killpac_snd_a = ResWithAlt(SOUND_RES_PATH, "killpac.wav")
+ready_snd_a = ResWithAlt(SOUND_RES_PATH, "ready.wav")
+eyes_snd_a = ResWithAlt(SOUND_RES_PATH, "eyes.wav")
+siren_snd_a = ResWithAlt(SOUND_RES_PATH, "siren.wav")
+eatfruit_snd = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
+fruitbounce_snd = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
+
 # list of resources that have alternatives to be loaded when the konami code is activated
 RES_WITH_ALTS = [
-    PLAYER_NOT_JOINED,
+    player_not_joined_res_a, player_not_joined_border_res_a,
+    thisGame.life_res_a,
 ]
+RES_WITH_ALTS += THE_PACMAN.anim_left.values() + THE_PACMAN.anim_right.values() + THE_PACMAN.anim_up.values() + THE_PACMAN.anim_down.values() + THE_PACMAN.anim_stopped.values()
 for res in RES_WITH_ALTS:
     res.instance = load_res(res.folder, res.file_name)
+SND_WITH_ALTS = [
+    powerpellet_snd_a, eatgh_snd_a, extralife_snd_a, killpac_snd_a, ready_snd_a, eyes_snd_a, siren_snd_a
+]
+SND_WITH_ALTS += pellet_snd_a.values()
+for res in SND_WITH_ALTS:
+    res.instance = load_res(res.folder, res.file_name, is_sound=True)
 
-
+# everything is setup, let's play the game
 while True:
     for event in pygame.event.get():
         check_events(event)
@@ -1748,7 +1769,7 @@ while True:
         for idx, has_joined in enumerate(PLAYERS_JOINED.values(), 1):
             # draw gray ghost unless player has joined then draw its color
             color = NOT_JOINED
-            player_img = PLAYER_NOT_JOINED.instance
+            player_img = player_not_joined_res_a.instance
             if has_joined:
                 color = thisGame.ghost_colors[idx - 1]
 
@@ -1769,15 +1790,15 @@ while True:
             screen.blit(flip(player_img, True, True), (player_pos_top + player_base_x_top, player_y_pad - player_h))
             # draw a border in players that are ready
             if has_joined and PLAYERS_READY[idx - 1]:
-                player_border_w, player_border_h = thisGame.ready_border.get_size()
+                player_border_w, player_border_h = player_not_joined_border_res_a.instance.get_size()
                 for y in range(player_border_h):  # re-color the border according to the player ghost
                     for x in range(player_border_w):
-                        if thisGame.ready_border.get_at((x, y)) != TRANSPARENT:
-                            thisGame.ready_border.set_at((x, y), thisGame.ghost_colors[idx - 1])
+                        if player_not_joined_border_res_a.instance.get_at((x, y)) != TRANSPARENT:
+                            player_not_joined_border_res_a.instance.set_at((x, y), thisGame.ghost_colors[idx - 1])
                 player_and_shadow_w_diff_bottom = (player_border_w - player_w) / 2
                 player_and_shadow_h_diff_bottom = (player_border_h - player_h) / 2
-                screen.blit(thisGame.ready_border, (player_pos_bottom - player_base_x_bottom - player_and_shadow_w_diff_bottom, screen_h - player_y_pad - player_and_shadow_h_diff_bottom))
-                screen.blit(flip(thisGame.ready_border, True, True), (player_pos_top + player_base_x_top - player_and_shadow_w_diff_bottom, player_y_pad - (player_border_h - player_and_shadow_h_diff_bottom)))
+                screen.blit(player_not_joined_border_res_a.instance, (player_pos_bottom - player_base_x_bottom - player_and_shadow_w_diff_bottom, screen_h - player_y_pad - player_and_shadow_h_diff_bottom))
+                screen.blit(flip(player_not_joined_border_res_a.instance, True, True), (player_pos_top + player_base_x_top - player_and_shadow_w_diff_bottom, player_y_pad - (player_border_h - player_and_shadow_h_diff_bottom)))
 
         # flash the controls buttons pressed/released state
         controls_w, controls_h = thisGame.controls_pressed_right_image.get_size()
