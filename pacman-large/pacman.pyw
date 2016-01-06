@@ -167,7 +167,7 @@ class Game:
         self.imGameOver = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "gameover.gif")).convert_alpha()
         self.imReady = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "ready.gif")).convert_alpha()
         self.imLogo = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "logo.gif")).convert()
-        self.imPowPel = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "tiles", "pellet-power-white.gif")).convert_alpha()
+        self.pow_pel_res_a = ResWithAlt(TILE_RES_PATH, 'pellet-power-white.gif')
         self.imNeg = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "-.gif")).convert_alpha()
         self.imPower = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "power.gif")).convert_alpha()
         self.imScore = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "text", "score.gif")).convert_alpha()
@@ -239,7 +239,7 @@ class Game:
             screen.blit(flip(self.life_res_a.instance, True, True), (life_pos + lives_base_x, lives_title_y_pad / 2))
 
         powers_title_w = self.imPower.get_size()[0]
-        pow_pel_w = self.imPowPel.get_size()[0]
+        pow_pel_w = self.pow_pel_res_a.instance.get_size()[0]
         powers_title_y_pad = 35
         power_base_x_bottom = half_screen_w + third_screen_w - powers_title_w / 2
         power_base_x_top = half_screen_w - third_screen_w - powers_title_w / 2
@@ -247,14 +247,11 @@ class Game:
         screen.blit(flip(self.imPower, True, True), (power_base_x_top, powers_title_y_pad))
         for i in range(0, THE_PACMAN.power_pellets):
             pow_pel_pos = i * pow_pel_w
-            screen.blit(self.imPowPel, (pow_pel_pos + power_base_x_bottom, self.screenSize[1] - powers_title_y_pad / 2))
+            screen.blit(self.pow_pel_res_a.instance, (pow_pel_pos + power_base_x_bottom, self.screenSize[1] - powers_title_y_pad / 2))
             pow_pel_pos *= -1
             pow_pel_pos -= pow_pel_w
             pow_pel_pos += powers_title_w
-            screen.blit(flip(self.imPowPel, True, True), (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
-
-        # Draw fruit of this map:
-        # screen.blit(thisFruit.imFruit[thisFruit.fruitType], (4 + 16, self.screenSize[1] - 28))
+            screen.blit(flip(self.pow_pel_res_a.instance, True, True), (pow_pel_pos + power_base_x_top, powers_title_y_pad / 2))
 
         if self.mode == 3:
             # hack x.x
@@ -1520,7 +1517,7 @@ def load_cross_reference():
         this_id = int(split_by_space[0])
         if this_id not in NO_GIF_TILES:
             alt = None
-            if 100 <= this_id <= 199 or this_id in [2, 3]:
+            if 100 <= this_id <= 199 or this_id in [2, 3, 300]:
                 alt = thisGame.konami_code_alt
             tileIDImage[this_id] = load_res(TILE_RES_PATH, split_by_space[1] + ".gif", alt)
         else:
@@ -1622,7 +1619,7 @@ fruitbounce_snd = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", 
 # list of resources that have alternatives to be loaded when the konami code is activated
 RES_WITH_ALTS = [
     player_not_joined_res_a, player_not_joined_border_res_a,
-    thisGame.life_res_a,
+    thisGame.life_res_a, thisGame.pow_pel_res_a
 ]
 RES_WITH_ALTS += THE_PACMAN.anim_left.values() + THE_PACMAN.anim_right.values() + THE_PACMAN.anim_up.values() + THE_PACMAN.anim_down.values() + THE_PACMAN.anim_stopped.values()
 SND_WITH_ALTS = [
