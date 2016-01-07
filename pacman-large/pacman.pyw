@@ -1408,7 +1408,7 @@ def check_inputs():
                         ghost.vel_x = 0
                         ghost.vel_y = -ghost.speed
     elif thisGame.mode == 3:
-        for i in range(0, thisGame.ghosts_quantity, 1):
+        for i in range(thisGame.ghosts_quantity):
             ghost = thisGame.ghosts[i]
             controls = ghost.controls
             js = controls.joystick
@@ -1441,8 +1441,8 @@ def check_code():
 
 
 def check_events(event):
-    if event.type == KEYDOWN or event.type == JOYBUTTONDOWN:
-        if thisGame.mode == 3:
+    if thisGame.mode == 3:
+        if event.type == KEYDOWN or event.type == JOYBUTTONDOWN:
             if thisGame.levelNum == 0:
                 # players joining and leaving
                 for idx, key in enumerate(JOIN_KEYS):
@@ -1465,24 +1465,54 @@ def check_events(event):
                 # start the game
                 if pygame.key.get_pressed()[pygame.K_RETURN]:
                     start_game()
-    if event.type == JOYBUTTONDOWN or event.type == JOYAXISMOTION:
-        for joystick in JOYSTICKS:
-            if joystick.get_button(JOYSTICK_START_BUTTON):
-                kc_inputs.append(JOYSTICK_START_BUTTON)
-            elif joystick.get_button(JOYSTICK_JOIN_BUTTON):
-                kc_inputs.append(JOYSTICK_JOIN_BUTTON)
-            elif joystick.get_axis(JS_XAXIS) > 0.5:
-                kc_inputs.append(JOYSTICK_RIGHT)
-            elif joystick.get_axis(JS_XAXIS) < -0.5:
-                kc_inputs.append(JOYSTICK_LEFT)
-            elif joystick.get_axis(JS_YAXIS) > 0.5:
-                kc_inputs.append(JOYSTICK_DOWN)
-            elif joystick.get_axis(JS_YAXIS) < -0.5:
-                kc_inputs.append(JOYSTICK_UP)
-        check_code()
-    elif event.type == KEYDOWN:
-        kc_inputs.append(event.key)
-        check_code()
+        global kc_joy_pressed_button  # sorry, will fix this soon
+        global kc_joy_held_stick_x
+        global kc_joy_held_stick_y
+        if event.type == JOYBUTTONDOWN or event.type == JOYAXISMOTION:
+            for joystick in JOYSTICKS:
+                y_axis = joystick.get_axis(JS_YAXIS)
+                x_axis = joystick.get_axis(JS_XAXIS)
+                # code input for js buttons
+                if joystick.get_button(JOYSTICK_START_BUTTON):
+                    if not kc_joy_pressed_button:
+                        kc_inputs.append(JOYSTICK_START_BUTTON)
+                        kc_joy_pressed_button = True
+                elif joystick.get_button(JOYSTICK_JOIN_BUTTON):
+                    if not kc_joy_pressed_button:
+                        kc_inputs.append(JOYSTICK_JOIN_BUTTON)
+                        kc_joy_pressed_button = True
+                # code input for js stick in x axis
+                elif x_axis > 0.5:
+                    if not kc_joy_held_stick_x:
+                        kc_inputs.append(JOYSTICK_LEFT)
+                    kc_joy_held_stick_x = 5
+                elif kc_joy_held_stick_x and 0 < x_axis < 0.2:
+                    kc_joy_held_stick_x -= 1
+                elif x_axis < -0.5:
+                    if not kc_joy_held_stick_x:
+                        kc_inputs.append(JOYSTICK_RIGHT)
+                    kc_joy_held_stick_x = 5
+                elif kc_joy_held_stick_x and 0 > x_axis > -0.2:
+                    kc_joy_held_stick_x -= 1
+                # code input for js stick in y axis
+                elif y_axis > 0.5:
+                    if not kc_joy_held_stick_y:
+                        kc_inputs.append(JOYSTICK_DOWN)
+                    kc_joy_held_stick_y = 5
+                elif kc_joy_held_stick_y and 0 < y_axis < 0.3:
+                    kc_joy_held_stick_y -= 1
+                elif y_axis < -0.5:
+                    if not kc_joy_held_stick_y:
+                        kc_inputs.append(JOYSTICK_UP)
+                    kc_joy_held_stick_y = 5
+                elif kc_joy_held_stick_y and 0.1 > y_axis > -0.3:
+                    kc_joy_held_stick_y -= 1
+            check_code()
+        elif event.type == JOYBUTTONUP:
+            kc_joy_pressed_button = False
+        elif event.type == KEYDOWN:
+            kc_inputs.append(event.key)
+            check_code()
 
 
 def start_game():
@@ -1573,15 +1603,18 @@ controls_press_timer = CONTROLS_PRESS_TIMER_MAX
 controls_ready_timeout = CONTROLS_READY_TIMEOUT_MAX
 
 KC_POSSIBILITIES = {
-    'up': [pygame.K_w, pygame.K_t, pygame.K_i, K_UP, JOYSTICK_UP],
-    'down': [pygame.K_s, pygame.K_g, pygame.K_k, pygame.K_DOWN, JOYSTICK_DOWN],
-    'left': [pygame.K_a, pygame.K_f, pygame.K_j, pygame.K_LEFT, JOYSTICK_LEFT],
-    'right': [pygame.K_d, pygame.K_h, pygame.K_l, pygame.K_RIGHT, JOYSTICK_RIGHT],
+    'up': [pygame.K_w, pygame.K_t, pygame.K_i, K_UP, JOYSTICK_UP, JOYSTICK_DOWN],  # we have both up and down because of our table layout
+    'down': [pygame.K_s, pygame.K_g, pygame.K_k, pygame.K_DOWN, JOYSTICK_DOWN, JOYSTICK_UP],  # we have both up and down because of our table layout
+    'left': [pygame.K_a, pygame.K_f, pygame.K_j, pygame.K_LEFT, JOYSTICK_LEFT, JOYSTICK_RIGHT],  # we have both left and right because of our table layout
+    'right': [pygame.K_d, pygame.K_h, pygame.K_l, pygame.K_RIGHT, JOYSTICK_RIGHT, JOYSTICK_LEFT],  # we have both left and right because of our table layout
     'a': [pygame.K_a, JOYSTICK_START_BUTTON, JOYSTICK_JOIN_BUTTON],
     'b': [pygame.K_b, JOYSTICK_START_BUTTON, JOYSTICK_JOIN_BUTTON],
 }
 KONAMI_CODE = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a']
 kc_inputs = deque(maxlen=len(KONAMI_CODE))  # structure that automatically enqueues and dequeues `maxlen` items
+kc_joy_pressed_button = False
+kc_joy_held_stick_x = 0
+kc_joy_held_stick_y = 0
 
 # create a path_finder object
 path = PathFinder()
