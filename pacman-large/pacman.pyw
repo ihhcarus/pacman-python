@@ -563,23 +563,26 @@ class ghost():
             self.controls = build_controls(KEYS[self.id] + [None])
 
     def Draw(self):
-        for y in range(6, 12, 1):
-            for x in [5, 6, 8, 9]:
-                self.anim[self.animFrame].instance.set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
-                self.anim[self.animFrame].instance.set_at((x + 9, y), (0xf8, 0xf8, 0xf8, 255))
 
-        if THE_PACMAN.x > self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-right
-            pupil_set = (8, 9)
-        elif THE_PACMAN.x > self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-right
-            pupil_set = (8, 6)
-        elif THE_PACMAN.x < self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-left
-            pupil_set = (5, 6)
-        else:  # THE_PACMAN.x < self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-left
-            pupil_set = (5, 9)
-        for y in range(pupil_set[1], pupil_set[1] + 3, 1):
-            for x in range(pupil_set[0], pupil_set[0] + 2, 1):
-                self.anim[self.animFrame].instance.set_at((x, y), (0, 0, 255, 255))
-                self.anim[self.animFrame].instance.set_at((x + 9, y), (0, 0, 255, 255))
+        if not thisGame.konami_code_alt:
+
+            for y in range(6, 12, 1):
+                for x in [5, 6, 8, 9]:
+                    self.anim[self.animFrame].instance.set_at((x, y), (0xf8, 0xf8, 0xf8, 255))
+                    self.anim[self.animFrame].instance.set_at((x + 9, y), (0xf8, 0xf8, 0xf8, 255))
+
+            if THE_PACMAN.x > self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-right
+                pupil_set = (8, 9)
+            elif THE_PACMAN.x > self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-right
+                pupil_set = (8, 6)
+            elif THE_PACMAN.x < self.x and THE_PACMAN.y < self.y:  # THE_PACMAN is to upper-left
+                pupil_set = (5, 6)
+            else:  # THE_PACMAN.x < self.x and THE_PACMAN.y > self.y:  # THE_PACMAN is to lower-left
+                pupil_set = (5, 9)
+            for y in range(pupil_set[1], pupil_set[1] + 3, 1):
+                for x in range(pupil_set[0], pupil_set[0] + 2, 1):
+                    self.anim[self.animFrame].instance.set_at((x, y), (0, 0, 255, 255))
+                    self.anim[self.animFrame].instance.set_at((x + 9, y), (0, 0, 255, 255))
 
         # ghost skin
         if self.state == 1:  # draw regular ghost
