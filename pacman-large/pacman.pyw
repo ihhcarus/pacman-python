@@ -37,7 +37,7 @@ IMG_PELLET_COLOR = (0x80, 0x00, 0x80, 0xff)
 # Must come before pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 4096)
 pygame.mixer.init()
-MUTE_SOUNDS = True
+MUTE_SOUNDS = False
 
 clock = pygame.time.Clock()
 pygame.init()
@@ -1430,6 +1430,7 @@ def check_inputs():
 
 
 def its_mario_time():
+    play_sound(me_mario_snd)
     thisGame.konami_code_alt = MARIO_ALT_PATH
     refresh_alt_res()
 
@@ -1651,6 +1652,7 @@ eyes_snd_a = ResWithAlt(SOUND_RES_PATH, "eyes.wav")
 siren_snd_a = ResWithAlt(SOUND_RES_PATH, "siren.wav")
 eatfruit_snd = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "eatfruit.wav"))
 fruitbounce_snd = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "fruitbounce.wav"))
+me_mario_snd = pygame.mixer.Sound(os.path.join(SCRIPT_PATH, "res", "sounds", "me_mario.wav"))
 
 # list of resources that have alternatives to be loaded when the konami code is activated
 RES_WITH_ALTS = [
