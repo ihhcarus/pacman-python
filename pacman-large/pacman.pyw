@@ -45,13 +45,14 @@ pygame.init()
 # display setup
 DISPLAY_MODE_FLAGS = pygame.FULLSCREEN
 # enable this to run in windowed mode
-DISPLAY_MODE_FLAGS = 0
+# DISPLAY_MODE_FLAGS = 0
 
 window = pygame.display.set_mode((1, 1))
 pygame.display.set_caption("Pacman")
 screen = pygame.display.get_surface()
 RES_W = 1280  # your computer actual resolution width
 RES_H = 768  # your computer actual resolution height
+pygame.mouse.set_visible(False)
 
 img_Background = pygame.image.load(os.path.join(SCRIPT_PATH, "res", "backgrounds", "1.gif")).convert_alpha()
 
@@ -260,6 +261,7 @@ class Game:
                 if screen_.get_size() != (RES_W, RES_H):
                     pygame.display.set_mode((RES_W, RES_H), DISPLAY_MODE_FLAGS)
                 screen.blit(self.imGameOver, (0, 0))
+                pygame.mixer.stop()
                 if thisGame.konami_code_alt:  # reset assets after game over
                         thisGame.konami_code_alt = None
                         refresh_alt_res()
